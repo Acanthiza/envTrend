@@ -19,8 +19,6 @@ make_cooccur <- function(pres_df
                          ) {
 
   pres_df %>%
-    dplyr::add_count(dplyr::across(tidyselect::any_of(taxa_col))) %>%
-    dplyr::filter(n > min_taxa_count) %>%
     dplyr::distinct(across(all_of(taxa_col))
                     , across(any_of(context))
                     ) %>%
