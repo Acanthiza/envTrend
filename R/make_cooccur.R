@@ -1,12 +1,24 @@
 
-make_cooccur <- function(presences
+#' Find taxa pairwise co-occurrence patterns
+#'
+#' @param pres_df Dataframe with presence records, along with `taxa_col` and
+#' `context`(s)
+#' @param taxa_col Character name of columns in `pres_df` with taxa.
+#' @param context Character name of column(s) in `pres_df` that define the
+#' context.'
+#' @param ... Passed to `cooccur::cooccur()`
+#'
+#' @return a list of class `cooccur`
+#' @export
+#'
+#' @examples
+make_cooccur <- function(pres_df
                          , taxa_col = "taxa"
-                         , num_col = "p"
                          , context
-                         , min_taxa_count = 1
+                         , ...
                          ) {
 
-  presences %>%
+  pres_df %>%
     dplyr::add_count(dplyr::across(tidyselect::any_of(taxa_col))) %>%
     dplyr::filter(n > min_taxa_count) %>%
     dplyr::distinct(across(all_of(taxa_col))
@@ -19,8 +31,6 @@ make_cooccur <- function(presences
                        ) %>%
     tibble::column_to_rownames(taxa_col) %>%
     as.matrix() %>%
-    cooccur::cooccur(spp_names = TRUE
-                     , thresh = FALSE
-                     )
+    cooccur::cooccur(...)
 
 }

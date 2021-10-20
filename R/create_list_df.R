@@ -1,5 +1,26 @@
 
 
+#' Filter data to a set of specifications
+#'
+#' Currently this feels messy, much room for improvement.
+#'
+#' @param df Cleaned biological data.
+#' @param taxa_col Character name of column in `df` with taxa.
+#' @param geo_level Character name of column in `df` with geographic scale(s) of
+#' interest
+#' @param tax_level Character name of column(s) in `df` with taxonomic scale(s)
+#' of interest
+#' @param minListLengthThresh Minimum list length allowed
+#' @param maxListLengthOccurenceThresh Maximum
+#' @param minlistOccurenceThresh
+#' @param minYearsThresh
+#' @param minListLengthsThresh
+#' @param minYearSpanThresh
+#'
+#' @return
+#' @export
+#'
+#' @examples
 create_list_df <- function(df
                            , taxa_col = "taxa"
                            , geo_level
