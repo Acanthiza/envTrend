@@ -36,7 +36,7 @@ filter_list_df <- function(df
                            , min_span = 20
                            ) {
 
-  full_context <- c(taxa_col, geo_level, tax_level, time_levels)
+  full_context <- c(taxa_col, geo_levels, tax_levels, time_levels)
 
   filt_min_length <- function(df
                               , ret = c("num","df")

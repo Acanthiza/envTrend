@@ -23,6 +23,15 @@ filter_list_df(
 
 \item{taxa_col}{Character name of column in \code{df} with taxa.}
 
+\item{geo_levels}{Character name of column in \code{df} with geographic context(s)
+of interest.}
+
+\item{tax_levels}{Character name of column(s) in \code{df} with taxonomic
+context(s) of interest.}
+
+\item{time_levels}{Character name of column(s) in \code{df} with time context(s)
+of interest.}
+
 \item{min_length}{Minimum allowable list length.}
 
 \item{shortest_max}{Minimum allowable maximum length.}
@@ -34,12 +43,6 @@ filter_list_df(
 \item{min_lengths}{Minimum allowable unique list lengths.}
 
 \item{min_span}{Minimum allowable span of years.}
-
-\item{geo_level}{Character name of column in \code{df} with geographic scale(s) of
-interest}
-
-\item{tax_level}{Character name of column(s) in \code{df} with taxonomic scale(s)
-of interest}
 }
 \value{
 Filtered data frame.
