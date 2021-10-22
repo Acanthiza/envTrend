@@ -12,6 +12,8 @@
 #' context(s) of interest.
 #' @param time_levels Character name of column(s) in `df` with time context(s)
 #' of interest.
+#' @param analysis_levels Character name of column(s) in `df` that are used in
+#' model formula.
 #' @param min_length Minimum allowable list length.
 #' @param shortest_max Minimum allowable maximum length.
 #' @param min_occurrence Minimum allowable occurrence.
@@ -28,6 +30,7 @@ filter_list_df <- function(df
                            , geo_levels
                            , tax_levels
                            , time_levels
+                           , analysis_levels
                            , min_length = 3
                            , shortest_max = 3
                            , min_occurrence = 5
@@ -85,7 +88,7 @@ filter_list_df <- function(df
                                   ) {
 
     temp <- df %>%
-      dplyr::count(across(any_of(full_context))
+      dplyr::count(taxa, across(any_of(analysis_levels))
                    , name = "lists"
                    ) %>%
       dplyr::filter(lists < min_occurrence)
@@ -110,10 +113,10 @@ filter_list_df <- function(df
                              ) {
 
     temp <- df %>%
-      dplyr::count(across(tidyselect::any_of(full_context))
+      dplyr::count(across(tidyselect::any_of(analysis_levels))
                    , name = "blah"
                    ) %>%
-      dplyr::count(across(tidyselect::any_of(full_context[!full_context %in% time_cols]))
+      dplyr::count(across(tidyselect::any_of(analysis_levels[!analysis_levels %in% time_cols]))
                    , name = "years"
                    ) %>%
       dplyr::filter(years < min_years)
@@ -138,11 +141,11 @@ filter_list_df <- function(df
                                ) {
 
     temp <- df %>%
-      dplyr::count(across(tidyselect::any_of(full_context))
+      dplyr::count(across(tidyselect::any_of(analysis_levels))
                    , list_length
                    , name = "blah"
                    ) %>%
-      dplyr::count(across(tidyselect::any_of(full_context))
+      dplyr::count(across(tidyselect::any_of(analysis_levels))
                    , name = "lengths"
                    ) %>%
       dplyr::filter(lengths < min_lengths)
@@ -167,7 +170,7 @@ filter_list_df <- function(df
                            ) {
 
     temp <- df %>%
-      dplyr::group_by(across(tidyselect::any_of(full_context[!full_context %in% time_cols]))) %>%
+      dplyr::group_by(across(tidyselect::any_of(analysis_levels[!analysis_levels %in% time_cols]))) %>%
       dplyr::summarise(min_year = min(year)
                        , max_year = max(year)
                        ) %>%

@@ -10,6 +10,7 @@ filter_list_df(
   geo_levels,
   tax_levels,
   time_levels,
+  analysis_levels,
   min_length = 3,
   shortest_max = 3,
   min_occurrence = 5,
@@ -31,6 +32,9 @@ context(s) of interest.}
 
 \item{time_levels}{Character name of column(s) in \code{df} with time context(s)
 of interest.}
+
+\item{analysis_levels}{Character name of column(s) in \code{df} that are used in
+model formula.}
 
 \item{min_length}{Minimum allowable list length.}
 

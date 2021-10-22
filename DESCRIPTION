@@ -17,6 +17,7 @@ BugReports: https://github.com/Acanthiza/envTrend/issues
 Imports: 
     cooccur,
     dplyr,
+    GGally,
     tibble,
     tidybayes,
     tidyr,

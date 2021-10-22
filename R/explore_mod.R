@@ -1,4 +1,30 @@
 
+#' Explore (pre- and most-) model results.
+#'
+#' @param taxa Scientific name of taxa (for labelling things).
+#' @param common Common name of taxa (also used in labels).
+#' @param df Data used for model saved at `mod_path`.
+#' @param mod_path Path to saved model.
+#' @param mod_type Type of model (e.g. 'reporting rate', or 'occupancy')
+#' @param resp_var What is the response variable?
+#' @param exp_var What are the variables to include in model exploration?
+#' @param max_levels Maximum number of classes to include in categorial plots.
+#' @param draws Number of draws from posterior distribution to display in plots.
+#' @param post_groups Character names of variables to include in model results.
+#'
+#' @return A list with components
+#' \itemize{
+#'   \item{count_char}{ggplot object. Count of levels within character variables.}
+#'   \item{y_vs_char}{ggplot object. Response variable vs character variables.}
+#'   \item{count_num}{ggplot object. Histogram of each numeric variable.}
+#'   \item{y_vs_num}{ggplot object. Response variable vs numeric variables with `geom_smooth()`.}
+#'   \item{pairs}{`GGally::ggpairs` object from `df`.}
+#'   \item{pred}{Dataframe of `posterior_predict` for levels of interest.}
+#'   \item{res}{`pred` summarised by `post_groups`.}
+#' }
+#' @export
+#'
+#' @examples
   explore_mod <- function(taxa
                           , common
                           , df
@@ -70,7 +96,7 @@
     if(has_character) {
 
       # count character
-      res$countChar <- ggplot(dat_exp %>%
+      res$count_char <- ggplot(dat_exp %>%
                                 dplyr::mutate(across(where(is.factor),as.character)) %>%
                                 dplyr::select_if(is.character) %>%
                                 tidyr::gather(variable,value,1:ncol(.)) %>%
@@ -95,7 +121,7 @@
              )
 
       # resp_var vs character
-      res$YvsChar <-ggplot(dat_exp %>%
+      res$y_vs_char <-ggplot(dat_exp %>%
                              dplyr::mutate({{resp_var}} := factor(!!ensym(resp_var))) %>%
                              dplyr::mutate_if(is.factor,as.character) %>%
                              dplyr::select_if(is.character) %>%
@@ -119,19 +145,19 @@
     if(has_numeric) {
 
       # Count numeric
-      res$countNum <- ggplot(dat_exp %>%
+      res$count_num <- ggplot(dat_exp %>%
                                dplyr::select(where(is.numeric)) %>%
                                tidyr::gather(variable,value,1:ncol(.))
                              , aes(value)
-      ) +
+                             ) +
         geom_histogram() +
         facet_wrap(~variable, scales = "free") +
         labs(title = plot_titles
              , subtitle = "Histograms of numeric variables"
-        )
+             )
 
       # resp_var vs. Numeric
-      res$YvsNum <- ggplot(dat_exp %>%
+      res$y_vs_num <- ggplot(dat_exp %>%
                              dplyr::select(any_of(var_exp)) %>%
                              dplyr::select(where(is.numeric)) %>%
                              tidyr::gather(variable,value,2:ncol(.)) %>%
@@ -148,11 +174,11 @@
 
     }
 
-    res$pairs <- ggpairs(dat_exp %>%
+    res$pairs <- GGally::ggpairs(dat_exp %>%
                            dplyr::mutate(across(where(is.character),factor)) %>%
                            dplyr::select(where(~is.numeric(.x)|is.factor(.x) & n_distinct(.x) < 15)) %>%
                            dplyr::mutate(across(where(is.factor),factor))
-    ) +
+                           ) +
       theme(axis.text.x=element_text(angle=90, vjust=0.5))
 
 
@@ -162,7 +188,7 @@
 
       res$resid <- tibble(residual = residuals(mod)
                           , fitted = fitted(mod)
-      ) %>%
+                          ) %>%
         dplyr::bind_cols(df)
 
 
@@ -221,34 +247,32 @@
 
     isBinomialMod <- family(mod)$family == "binomial"
 
-    pred <- df %>%
+    res$pred <- df %>%
       dplyr::distinct(geo2) %>%
       dplyr::left_join(df %>%
                          dplyr::distinct(year)
                        , by = character()
-      ) %>%
+                       ) %>%
       dplyr::mutate(list_length = if(has_ll) median(df$list_length) else NULL
                     , list_length_log = if(has_ll) log(list_length) else NULL
                     , col = row.names(.)
                     , success = if(isBinomialMod) 0 else NULL
                     , trials = if(isBinomialMod) 100 else NULL
-      ) %>%
+                    ) %>%
       dplyr::left_join(as_tibble(posterior_predict(mod
                                                    , newdata = .
                                                    , re.form = NA#insight::find_formula(mod)$random
                                                    , type = "response"
-      )
-      ) %>%
-        tibble::rownames_to_column(var = "row") %>%
-        tidyr::gather(col,value,2:ncol(.))
-      ) %>%
+                                                   )
+                                 ) %>%
+                         tibble::rownames_to_column(var = "row") %>%
+                         tidyr::gather(col,value,2:ncol(.))
+                       ) %>%
       dplyr::mutate(rawValue = as.numeric(value)
                     , value = if(isBinomialMod) rawValue/trials else rawValue
-      )
+                    )
 
-    write_feather(pred,out_pred)
-
-    res$res <- pred %>%
+    res$res <- res$pred %>%
       dplyr::group_by(across(any_of(post_groups))) %>%
       dplyr::summarise(n = n()
                        , nCheck = nrow(as_tibble(mod))
@@ -257,7 +281,7 @@
                        , modci90lo = quantile(value, 0.05)
                        , modci90up = quantile(value, 0.95)
                        , text = paste0(round(modMedian,2)," (",round(modci90lo,2)," to ",round(modci90up,2),")")
-      ) %>%
+                       ) %>%
       dplyr::ungroup()
 
 
@@ -267,7 +291,7 @@
       dplyr::distinct(geo2,year) %>%
       dplyr::mutate(success = 0
                     , trials = 100
-      ) %>%
+                    ) %>%
       dplyr::full_join(tibble(probs = quantProbs[2]) %>%
                          {if(has_ll) (.) %>% dplyr::mutate(list_length = map_dbl(probs
                                                                                ,~quantile(unique(df$list_length)
@@ -502,6 +526,8 @@
       )
 
 
-    write_rds(res,out_res)
+    write_rds(res
+              , out_res
+              )
 
   }
