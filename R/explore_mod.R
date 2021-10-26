@@ -46,24 +46,6 @@
 
     print(taxa)
 
-    if(isTRUE(is.null(tests))) {
-
-      tests <- tibble::tribble(~type, ~year
-                                 , "reference", 2000
-                                 , "recent", 2015
-                                 ) %>%
-        tidyr::unnest(cols = c(year))
-
-    }
-
-    reference <- tests$year[tests$type == "reference"]
-
-    recent <- tests$year[tests$type == "recent"]
-
-
-
-    context <- c(post_groups, mod_type)
-
     #-------do_run--------
 
     out_file <- gsub("\\.rds"
@@ -81,7 +63,21 @@
 
     if(do_run) {
 
-      out_dir <- dirname(mod_path)
+      if(isTRUE(is.null(tests))) {
+
+        tests <- tibble::tribble(~type, ~year
+                                 , "reference", 2000
+                                 , "recent", 2015
+                                 ) %>%
+          tidyr::unnest(cols = c(year))
+
+      }
+
+      reference <- tests$year[tests$type == "reference"]
+
+      recent <- tests$year[tests$type == "recent"]
+
+      context <- c(post_groups, mod_type)
 
       mod <- read_rds(mod_path)
 
