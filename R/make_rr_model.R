@@ -18,7 +18,7 @@
 #' @export
 #'
 #' @examples
-rr <- function(taxa
+make_rr_model <- function(taxa
                , df
                , geo_cols
                , cell_cols = c("grid_l", "grid_s")
