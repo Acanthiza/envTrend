@@ -17,8 +17,11 @@ BugReports: https://github.com/Acanthiza/envTrend/issues
 Imports: 
     cooccur,
     dplyr,
+    fs,
     GGally,
     ggridges,
+    rio,
+    rstanarm,
     tibble,
     tidybayes,
     tidyr,
