@@ -14,7 +14,9 @@ explore_mod(
   exp_var,
   max_levels = 30,
   draws = 200,
-  post_groups = c("taxa", "common", "list_length", "year", "geo2")
+  post_groups,
+  tests = NULL,
+  re_run = FALSE
 )
 }
 \arguments{
@@ -37,6 +39,13 @@ explore_mod(
 \item{draws}{Number of draws from posterior distribution to display in plots.}
 
 \item{post_groups}{Character names of variables to include in model results.}
+
+\item{tests}{Years at which to predict (and compare change) as dataframe
+with type = c("reference", "recent") and year = four-digit year corresponding
+to references and recent.}
+
+\item{re_run}{Logical. If file \code{gsub("\\\\.rds", "_res.rds", mod_path)} already
+exists, should it be re-run?}
 }
 \value{
 A list with components

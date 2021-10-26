@@ -10,13 +10,13 @@ filter_list_df(
   geo_levels,
   tax_levels,
   time_levels,
-  analysis_levels,
   min_length = 3,
   shortest_max = 3,
   min_occurrence = 5,
   min_years = 3,
   min_lengths = 2,
-  min_span = 20
+  min_year = as.numeric(format(Sys.Date(), "\%Y")) - 11,
+  max_year = as.numeric(format(Sys.Date(), "\%Y")) - 1
 )
 }
 \arguments{
@@ -33,9 +33,6 @@ context(s) of interest.}
 \item{time_levels}{Character name of column(s) in \code{df} with time context(s)
 of interest.}
 
-\item{analysis_levels}{Character name of column(s) in \code{df} that are used in
-model formula.}
-
 \item{min_length}{Minimum allowable list length.}
 
 \item{shortest_max}{Minimum allowable maximum length.}
@@ -46,7 +43,9 @@ model formula.}
 
 \item{min_lengths}{Minimum allowable unique list lengths.}
 
-\item{min_span}{Minimum allowable span of years.}
+\item{min_year}{Must be records less than \code{min_year}.}
+
+\item{max_year}{Much be records greater than \code{max_year}.}
 }
 \value{
 Filtered data frame.

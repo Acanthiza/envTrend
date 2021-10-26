@@ -12,14 +12,13 @@
 #' context(s) of interest.
 #' @param time_levels Character name of column(s) in `df` with time context(s)
 #' of interest.
-#' @param analysis_levels Character name of column(s) in `df` that are used in
-#' model formula.
 #' @param min_length Minimum allowable list length.
 #' @param shortest_max Minimum allowable maximum length.
 #' @param min_occurrence Minimum allowable occurrence.
 #' @param min_years Minimum allowable years with occurrence.
 #' @param min_lengths Minimum allowable unique list lengths.
-#' @param min_span Minimum allowable span of years.
+#' @param min_year Must be records less than `min_year`.
+#' @param max_year Much be records greater than `max_year`.
 #'
 #' @return Filtered data frame.
 #' @export
@@ -30,214 +29,40 @@ filter_list_df <- function(df
                            , geo_levels
                            , tax_levels
                            , time_levels
-                           , analysis_levels
                            , min_length = 3
                            , shortest_max = 3
                            , min_occurrence = 5
                            , min_years = 3
                            , min_lengths = 2
-                           , min_span = 20
+                           , min_year = as.numeric(format(Sys.Date(),"%Y")) - 11
+                           , max_year = as.numeric(format(Sys.Date(),"%Y")) - 1
                            ) {
 
-  full_context <- c(taxa_col, geo_levels, tax_levels, time_levels)
+  temp <- df %>%
+    dplyr::group_by(across(any_of(c(taxa_col, tax_levels, geo_levels)))) %>%
+    dplyr::summarise(min_list_length = min(list_length)
+                     , max_list_length = max(list_length)
+                     , list_occ = n_distinct(list)
+                     , min_list_year = min(year)
+                     , max_list_year = max(year)
+                     , years = n_distinct(year)
+                     , lengths = n_distinct(list_length)
+                     , records = n()
+                     ) %>%
+    dplyr::ungroup()
 
-  filt_min_length <- function(df
-                              , ret = c("num","df")
-                              ) {
-
-    if(ret == "num") {
-
-      min(df$list_length)
-
-    } else if(ret == "df") {
-
-      df %>%
-        dplyr::filter(list_length > min_length)
-
-    }
-
-  }
-
-  filt_shortest_max <- function(df
-                                , ret = c("num","df")
-                                ) {
-
-    temp <- df %>%
-      dplyr::group_by(across(tidyselect::any_of(full_context))) %>%
-      dplyr::filter(list_length == max(list_length)) %>%
-      dplyr::ungroup() %>%
-      dplyr::filter(list_length < min(shortest_max))
-
-    if(ret == "num") {
-
-      temp %>%
-        dplyr::pull(list_length) %>%
-        min()
-
-    } else {
-
-      df %>%
-        dplyr::anti_join(temp)
-
-    }
-
-  }
-
-  filt_min_occurrence <- function(df
-                                  , ret = c("num","df")
-                                  ) {
-
-    temp <- df %>%
-      dplyr::count(taxa, across(any_of(analysis_levels))
-                   , name = "lists"
-                   ) %>%
-      dplyr::filter(lists < min_occurrence)
-
-    if(ret == "num") {
-
-      temp %>%
-        dplyr::pull(lists) %>%
-        min()
-
-    } else {
-
-      df %>%
-        dplyr::anti_join(temp)
-
-    }
-
-  }
-
-  filt_min_years <- function(df
-                             , ret = c("num","df")
-                             ) {
-
-    temp <- df %>%
-      dplyr::count(across(tidyselect::any_of(analysis_levels))
-                   , name = "blah"
-                   ) %>%
-      dplyr::count(across(tidyselect::any_of(analysis_levels[!analysis_levels %in% time_cols]))
-                   , name = "years"
-                   ) %>%
-      dplyr::filter(years < min_years)
-
-    if(ret == "num") {
-
-      temp %>%
-        dplyr::pull(years) %>%
-        min()
-
-    } else {
-
-      df %>%
-        dplyr::anti_join(temp)
-
-    }
-
-  }
-
-  filt_min_lengths <- function(df
-                               , ret = c("num","df")
-                               ) {
-
-    temp <- df %>%
-      dplyr::count(across(tidyselect::any_of(analysis_levels))
-                   , list_length
-                   , name = "blah"
-                   ) %>%
-      dplyr::count(across(tidyselect::any_of(analysis_levels))
-                   , name = "lengths"
-                   ) %>%
-      dplyr::filter(lengths < min_lengths)
-
-    if(ret == "num") {
-
-      temp %>%
-        dplyr::pull(lengths) %>%
-        min()
-
-    } else {
-
-      df %>%
-        dplyr::anti_join(temp)
-
-    }
-
-  }
-
-  filt_min_span <-function(df
-                           , ret = c("num","df")
-                           ) {
-
-    temp <- df %>%
-      dplyr::group_by(across(tidyselect::any_of(analysis_levels[!analysis_levels %in% time_cols]))) %>%
-      dplyr::summarise(min_year = min(year)
-                       , max_year = max(year)
-                       ) %>%
-      dplyr::ungroup() %>%
-      dplyr::mutate(span = max_year - min_year) %>%
-      dplyr::filter(span < min_span)
-
-    if(ret == "num") {
-
-      temp %>%
-        dplyr::pull(span) %>%
-        min()
-
-    } else {
-
-      df %>%
-        dplyr::anti_join(temp)
-
-    }
-
-  }
-
-  min_list_length <- filt_min_length(df, ret = "num")
-  min_list_max_length <- filt_shortest_max(df, ret = "num")
-  min_list_occurrence <- filt_min_occurrence(df, ret = "num")
-  min_list_years <- filt_min_years(df, ret = "num")
-  min_list_lengths <- filt_min_lengths(df, ret = "num")
-  min_list_span <- filt_min_span(df, ret = "num")
-
-  while(min_list_length < min_length |
-        min_list_max_length < shortest_max |
-        min_list_occurrence < min_occurrence |
-        min_list_years < min_years |
-        min_list_lengths < min_lengths |
-        min_list_span < min_span
-        ) {
-
-    df <- df %>%
-      filt_min_length(ret = "df") %>%
-      filt_shortest_max(ret = "df") %>%
-      filt_min_occurrence(ret = "df") %>%
-      filt_min_years(ret = "df") %>%
-      filt_min_lengths(ret = "df") %>%
-      filt_min_span(ret = "df") %>%
-      dplyr::add_count(list, name = "list_length")
-
-    min_list_length <- filt_min_length(df, ret = "num")
-    min_list_max_length <- filt_shortest_max(df, ret = "num")
-    min_list_occurrence <- filt_min_occurrence(df, ret = "num")
-    min_list_years <- filt_min_years(df, ret = "num")
-    min_list_lengths <- filt_min_lengths(df, ret = "num")
-    min_list_span <- filt_min_span(df, ret = "num")
-
-    temp <- paste0("Minimum length = ",min_list_length
-                  ,"\nMinimum of maximum length = ",min_list_max_length
-                  ,"\nMinimum occurrences = ",min_list_occurrence
-                  ,"\nMinimum years = ",min_list_years
-                  ,"\nMinimum unique lengths = ",min_list_lengths
-                  ,"\nMinimum year span = ",min_list_span
-                  ,"\nTotal records = ",nrow(df)
-                  ,"\n"
+  keep <- temp %>%
+    dplyr::filter(min_list_length >= min_length
+                  , max_list_length >= shortest_max
+                  , list_occ >= min_occurrence
+                  , years >= min_years
+                  , lengths >= min_lengths
+                  , min_list_year <= min_year
+                  , max_list_year >= max_year
                   )
 
-    cat(temp)
-
-  }
-
-  return(df)
+  res <- df %>%
+    dplyr::inner_join(keep) %>%
+    dplyr::select(names(df))
 
 }

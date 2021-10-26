@@ -18,6 +18,7 @@ Imports:
     cooccur,
     dplyr,
     GGally,
+    ggridges,
     tibble,
     tidybayes,
     tidyr,
