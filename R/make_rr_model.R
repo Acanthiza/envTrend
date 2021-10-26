@@ -7,10 +7,9 @@
 #' @param df Cleaned, filtered data frame.
 #' @param geo_cols Character name of columns in `df` containing geographic
 #' context. Last index in `geo_cols` is used as primary analysis level.
-#' @param cell_cols Character name of columns in `df` containing two scales of
-#' (probably raster) grid cells. The first index is the larger cell, second
-#' index is smaller.  The larger cell is used as a random factor in the model,
-#' if there is more than one level.
+#' @param random_col Character name of column in `df` containing random factor
+#' for model. This is usually the larger of two (probably raster) grid cell
+#' sizes.
 #' @param out_path Path into which model results are saved.
 #' @param ... Passed to rstanarm::stan_gamm4 (e.g. chains, iter)
 #'
@@ -21,7 +20,7 @@
 make_rr_model <- function(taxa
                , df
                , geo_cols
-               , cell_cols = c("grid_l", "grid_s")
+               , random_col = "grid_l"
                , out_path
                , ...
                ) {
@@ -35,35 +34,45 @@ make_rr_model <- function(taxa
     nrow()
 
   grid_cells <- df %>%
-    dplyr::distinct(across(cell_cols)) %>%
+    dplyr::distinct(across(any_of(random_col))) %>%
     nrow()
 
   geo2 <- geo_cols[2]
-
-  grid_l <- cell_cols[1]
 
   # GAM
   if(geos > 1) {
 
     mod <- rstanarm::stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
-                                        , "s(year, k = 4, bs = 'ts') +"
-                                        , geo2
-                                        , " + s(year, k = 4, by = "
-                                        , geo2
-                                        , ", bs = 'ts')"
-                                        )
-                                 )
-                      , data = df
-                      , family = stats::binomial()
-                      , random = ~(1|grid_l)
-                      , ...
-                      )
+                                                  , "s(year, k = 4, bs = 'ts') +"
+                                                  , geo2
+                                                  , " + s(year, k = 4, by = "
+                                                  , geo2
+                                                  , ", bs = 'ts')"
+                                                  )
+                                           )
+                                , data = df
+                                , family = stats::binomial()
+                                , random = as.formula(paste0("~(1|"
+                                                             , random_col
+                                                             , ")"
+                                                             )
+                                                      )
+                                , ...
+                                )
 
   } else {
 
-    mod <- stan_gamm4(cbind(success,trials-success) ~ s(year, k = 4, bs = "ts")
+    mod <- stan_gamm4(cbind(success, trials-success) ~ s(year, k = 4, bs = "ts")
                       , data = df
-                      , random = if(grid_cells > 1) formula(~ (1|grid_l)) else NULL
+                      , random = if(grid_cells > 1) {
+
+                          as.formula(paste0("~(1|"
+                                            , random_col
+                                            , ")"
+                                            )
+                                     )
+
+                        } else NULL
                       , family = stats::binomial()
                       , ...
                       )

@@ -4,14 +4,7 @@
 \alias{make_rr_model}
 \title{Make, and save to disk, a reporting rate model.}
 \usage{
-make_rr_model(
-  taxa,
-  df,
-  geo_cols,
-  cell_cols = c("grid_l", "grid_s"),
-  out_path,
-  ...
-)
+make_rr_model(taxa, df, geo_cols, random_col = "grid_l", out_path, ...)
 }
 \arguments{
 \item{taxa}{Character name of taxa for which model is being run. Used to name
@@ -22,10 +15,9 @@ output file.}
 \item{geo_cols}{Character name of columns in \code{df} containing geographic
 context. Last index in \code{geo_cols} is used as primary analysis level.}
 
-\item{cell_cols}{Character name of columns in \code{df} containing two scales of
-(probably raster) grid cells. The first index is the larger cell, second
-index is smaller.  The larger cell is used as a random factor in the model,
-if there is more than one level.}
+\item{random_col}{Character name of column in \code{df} containing random factor
+for model. This is usually the larger of two (probably raster) grid cell
+sizes.}
 
 \item{out_path}{Path into which model results are saved.}
 
