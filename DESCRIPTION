@@ -20,9 +20,12 @@ Imports:
     fs,
     GGally,
     ggridges,
+    mgcv,
+    purrr,
     rio,
     rstanarm,
     tibble,
     tidybayes,
     tidyr,
-    tidyselect
+    tidyselect,
+    unmarked

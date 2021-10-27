@@ -5,12 +5,12 @@
 #' @param taxa Character name of taxa for which model is being run. Used to name
 #' output file.
 #' @param df Cleaned, filtered data frame.
+#' @param out_file Path to file where model results are/will be saved.
 #' @param geo_cols Character name of columns in `df` containing geographic
 #' context. Last index in `geo_cols` is used as primary analysis level.
 #' @param random_col Character name of column in `df` containing random factor
 #' for model. This is usually the larger of two (probably raster) grid cell
 #' sizes.
-#' @param out_path Directory into which model results are saved.
 #' @param ... Passed to rstanarm::stan_gamm4 (e.g. chains, iter)
 #'
 #' @return `fs::path(out_path,paste0("list-length_mod_",taxa,".rds"))`
@@ -21,13 +21,11 @@ make_ll_model <- function(taxa
                           , df
                           , geo_cols
                           , random_col = "grid_l"
-                          , out_path
+                          , out_file
                           , ...
                           ) {
 
   print(taxa)
-
-  out_file <- fs::path(out_path,paste0("list-length_mod_",taxa,".rds"))
 
   geos <- df %>%
     dplyr::distinct(across(any_of(geo_cols))) %>%

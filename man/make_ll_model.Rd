@@ -4,7 +4,7 @@
 \alias{make_ll_model}
 \title{Make, and save to disk, a list-length corrected reporting rate model.}
 \usage{
-make_ll_model(taxa, df, geo_cols, random_col = "grid_l", out_path, ...)
+make_ll_model(taxa, df, geo_cols, random_col = "grid_l", out_file, ...)
 }
 \arguments{
 \item{taxa}{Character name of taxa for which model is being run. Used to name
@@ -19,7 +19,7 @@ context. Last index in \code{geo_cols} is used as primary analysis level.}
 for model. This is usually the larger of two (probably raster) grid cell
 sizes.}
 
-\item{out_path}{Directory into which model results are saved.}
+\item{out_file}{Path to file where model results are/will be saved.}
 
 \item{...}{Passed to rstanarm::stan_gamm4 (e.g. chains, iter)}
 }

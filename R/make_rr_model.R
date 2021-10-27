@@ -5,29 +5,27 @@
 #' @param taxa Character name of taxa for which model is being run. Used to name
 #' output file.
 #' @param df Cleaned, filtered data frame.
+#' @param out_file Path into which model results are saved.
 #' @param geo_cols Character name of columns in `df` containing geographic
 #' context. Last index in `geo_cols` is used as primary analysis level.
 #' @param random_col Character name of column in `df` containing random factor
 #' for model. This is usually the larger of two (probably raster) grid cell
 #' sizes.
-#' @param out_path Path into which model results are saved.
 #' @param ... Passed to rstanarm::stan_gamm4 (e.g. chains, iter)
 #'
-#' @return `fs::path(out_path,paste0("reporting-rate_mod_",taxa,".rds"))`
+#' @return `out_file`
 #' @export
 #'
 #' @examples
 make_rr_model <- function(taxa
                , df
+               , out_file
                , geo_cols
                , random_col = "grid_l"
-               , out_path
                , ...
                ) {
 
   print(taxa)
-
-  out_file <- fs::path(out_path,paste0("reporting-rate_mod_",taxa,".rds"))
 
   geos <- df %>%
     dplyr::distinct(across(any_of(geo_cols))) %>%
@@ -62,7 +60,10 @@ make_rr_model <- function(taxa
 
   } else {
 
-    mod <- stan_gamm4(cbind(success, trials-success) ~ s(year, k = 4, bs = "ts")
+    mod <- stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
+                                        , "s(year, k = 4, bs = 'ts')"
+                                        )
+                                 )
                       , data = df
                       , random = if(grid_cells > 1) {
 
