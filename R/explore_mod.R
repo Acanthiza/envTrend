@@ -142,7 +142,7 @@
           )
           ) +
           labs(title = plot_titles
-               , sub_title = "Count of levels within character variables"
+               , subtitle = "Count of levels within character variables"
           )
 
         # resp_var vs character
@@ -161,7 +161,7 @@
           facet_wrap(~variable, scales = "free") +
           theme(axis.text.x=element_text(angle=90, vjust=0.5)) +
           labs(title = plot_titles
-               , sub_title = paste0("Boxplots of response variable (",resp_var,") against character variables")
+               , subtitle = paste0("Boxplots of response variable (",resp_var,") against character variables")
                )
 
       }
@@ -178,7 +178,7 @@
           geom_histogram() +
           facet_wrap(~variable, scales = "free") +
           labs(title = plot_titles
-               , sub_title = "Histograms of numeric variables"
+               , subtitle = "Histograms of numeric variables"
           )
 
         # resp_var vs. Numeric
@@ -194,7 +194,7 @@
           facet_wrap(~variable, scales = "free") +
           theme(axis.text.x=element_text(angle=90, vjust=0.5)) +
           labs(title = plot_titles
-               , sub_title = paste0("Numeric variables plotted against response variable (",resp_var,")")
+               , subtitle = paste0("Numeric variables plotted against response variable (",resp_var,")")
                )
 
       }
@@ -326,7 +326,11 @@
                                                                               )
                                                                    )
                                              , log_list_length = log(list_length)
-                                             , length = paste0("At list length quantile ",probs," = ",list_length)
+                                             , length = paste0("At list length quantile "
+                                                               , probs
+                                                               , " = "
+                                                               , list_length
+                                                               )
                                ) else (.)
                              }
                          , by = character()
@@ -367,16 +371,16 @@
         ggplot(aes(x = year, y = !!ensym(resp_var))) +
         geom_line(aes(y = .value, group = .draw)
                   , alpha = 0.5
-        ) +
+                  ) +
         geom_vline(xintercept = tests$year
                    , linetype = 2
                    , colour = "red"
-        ) +
+                   ) +
         facet_wrap(as.formula(paste0("~ ",geo2))) +
         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
         labs(title = plot_titles
-             , sub_title = sub_title_line
-        )
+             , subtitle = sub_title_line
+             )
 
       if(has_ll) p <- p +
         geom_jitter(data = df
@@ -419,7 +423,7 @@
         geom_vline(xintercept = tests$year, linetype = 2, colour = "red") +
         facet_wrap(as.formula(paste0("~ ", geo2))) +
         labs(title = plot_titles
-             , sub_title = sub_title_ribbon
+             , subtitle = sub_title_ribbon
              )
 
       if(has_ll) p <- p +
@@ -546,7 +550,7 @@
                    ) +
         scale_fill_viridis_d(drop = FALSE) +
         labs(title = plot_titles
-             , sub_title = paste0("Difference in "
+             , subtitle = paste0("Difference in "
                                   , recent
                                   , " "
                                   , tolower(mod_type)
