@@ -27,7 +27,7 @@ make_ll_model <- function(taxa
 
   print(taxa)
 
-  out_file <- fs::path(outDir,paste0("list-length_mod_",taxa,".rds"))
+  out_file <- fs::path(out_path,paste0("list-length_mod_",taxa,".rds"))
 
   geos <- df %>%
     dplyr::distinct(across(any_of(geo_levels))) %>%

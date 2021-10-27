@@ -89,8 +89,6 @@
 
       has_ll <- sum(grepl("list_length",names(mod$coefficients))) > 0
 
-      if(has_ll) context <- c(context, "list_length")
-
       if(!resp_var %in% names(df)) df <- df %>%
         dplyr::group_by(across(any_of(exp_var))) %>%
         dplyr::summarise(!!ensym(resp_var) := sum(success)/n()) %>%
@@ -100,7 +98,7 @@
       # variables to explore
       var_exp <- c(resp_var
                    , colnames(df)
-      ) %>%
+                   ) %>%
         unique()
 
       dat_exp <- df %>%
@@ -158,13 +156,13 @@
                                  dplyr::mutate(levels = n_distinct(value)) %>%
                                  dplyr::ungroup() %>%
                                  dplyr::filter(levels < max_levels)
-        ) +
+                               ) +
           geom_boxplot(aes(value,!!ensym(resp_var))) +
           facet_wrap(~variable, scales = "free") +
           theme(axis.text.x=element_text(angle=90, vjust=0.5)) +
           labs(title = plot_titles
                , sub_title = paste0("Boxplots of response variable (",resp_var,") against character variables")
-          )
+               )
 
       }
 
@@ -190,14 +188,14 @@
                                  tidyr::gather(variable,value,2:ncol(.)) %>%
                                  dplyr::arrange(!!ensym(resp_var))
                                , aes(value,!!ensym(resp_var))
-        ) +
+                               ) +
           geom_point(alpha = 0.5) +
           geom_smooth() +
           facet_wrap(~variable, scales = "free") +
           theme(axis.text.x=element_text(angle=90, vjust=0.5)) +
           labs(title = plot_titles
                , sub_title = paste0("Numeric variables plotted against response variable (",resp_var,")")
-          )
+               )
 
       }
 
@@ -205,7 +203,7 @@
                                      dplyr::mutate(across(where(is.character),factor)) %>%
                                      dplyr::select(where(~is.numeric(.x)|is.factor(.x) & n_distinct(.x) < 15)) %>%
                                      dplyr::mutate(across(where(is.factor),factor))
-      ) +
+                                   ) +
         theme(axis.text.x=element_text(angle=90, vjust=0.5))
 
 
@@ -215,7 +213,7 @@
 
         res$resid <- tibble(residual = residuals(mod)
                             , fitted = fitted(mod)
-        ) %>%
+                            ) %>%
           dplyr::bind_cols(df)
 
 
@@ -256,7 +254,7 @@
                    dplyr::ungroup() %>%
                    dplyr::filter(levels < max_levels)
                  , aes(value,residual)
-          ) +
+                 ) +
             geom_boxplot() +
             geom_hline(aes(yintercept = 0), linetype = 2, colour = "red") +
             facet_wrap(~name, scales = "free") +
@@ -274,63 +272,69 @@
       is_binomial_mod <- family(mod)$family == "binomial"
 
       res$pred <- df %>%
-        dplyr::distinct(across(any_of(post_groups))) %>%
+        dplyr::distinct(across(any_of(context))) %>%
         dplyr::mutate(list_length = if(has_ll) median(df$list_length) else NULL
-                      , list_length_log = if(has_ll) log(list_length) else NULL
+                      , log_list_length = if(has_ll) log(list_length) else NULL
                       , col = row.names(.)
                       , success = if(is_binomial_mod) 0 else NULL
                       , trials = if(is_binomial_mod) 100 else NULL
-        ) %>%
+                      ) %>%
         dplyr::left_join(as_tibble(posterior_predict(mod
                                                      , newdata = .
                                                      , re.form = NA#insight::find_formula(mod)$random
                                                      , type = "response"
-        )
-        ) %>%
-          tibble::rownames_to_column(var = "row") %>%
-          tidyr::gather(col,value,2:ncol(.))
-        ) %>%
+                                                     )
+                                   ) %>%
+                           tibble::rownames_to_column(var = "row") %>%
+                           tidyr::gather(col,value,2:ncol(.))
+                         ) %>%
         dplyr::mutate(rawValue = as.numeric(value)
                       , value = if(is_binomial_mod) rawValue/trials else rawValue
-        )
+                      )
 
       res$res <- res$pred %>%
-        dplyr::group_by(across(any_of(post_groups))) %>%
+        dplyr::group_by(across(any_of(context))) %>%
         dplyr::summarise(n = n()
                          , nCheck = nrow(as_tibble(mod))
                          , modMean = mean(value)
                          , modMedian = quantile(value, 0.5)
                          , modci90lo = quantile(value, 0.05)
                          , modci90up = quantile(value, 0.95)
-                         , text = paste0(round(modMedian,2)," (",round(modci90lo,2)," to ",round(modci90up,2),")")
-        ) %>%
+                         , text = paste0(round(modMedian,2)
+                                         , " ("
+                                         , round(modci90lo,2)
+                                         , " to "
+                                         , round(modci90up,2)
+                                         , ")"
+                                         )
+                         ) %>%
         dplyr::ungroup()
 
 
       #------res plot data-------
 
       plot_data <- df %>%
-        dplyr::distinct(across(any_of(post_groups))) %>%
+        dplyr::distinct(across(any_of(context))) %>%
         dplyr::mutate(success = 0
                       , trials = 100
-        ) %>%
+                      ) %>%
         dplyr::full_join(tibble(probs = quant_probs[2]) %>%
                            {if(has_ll) (.) %>%
                                dplyr::mutate(list_length = map_dbl(probs
-                                                                   ,~quantile(unique(df$list_length)
+                                                                   , ~quantile(unique(df$list_length)
                                                                               , probs = .
+                                                                              )
                                                                    )
-                               )
-                               , list_length_log = log(list_length)
-                               , length = paste0("At list length quantile ",probs," = ",list_length)
+                                             , log_list_length = log(list_length)
+                                             , length = paste0("At list length quantile ",probs," = ",list_length)
                                ) else (.)
-                           }
+                             }
                          , by = character()
-        ) %>%
+                         ) %>%
         tidybayes::add_fitted_draws(mod
                                     , n = draws
                                     , re_formula = NA
-        )
+                                    )
 
       sub_title <-  if(has_ll) {
 
@@ -406,27 +410,27 @@
         geom_ribbon(data = res$res
                     , aes(year,modMean,ymin = modci90lo, ymax = modci90up)
                     , alpha = 0.4
-        ) +
+                    ) +
         geom_line(data = res$res
                   , aes(year,modMean)
                   , linetype = 1
                   , size = 1.5
-        ) +
+                  ) +
         geom_vline(xintercept = tests$year, linetype = 2, colour = "red") +
         facet_wrap(as.formula(paste0("~ ", geo2))) +
         labs(title = plot_titles
              , sub_title = sub_title_ribbon
-        )
+             )
 
       if(has_ll) p <- p +
         geom_jitter(data = df
                     ,aes(year
                          ,!!ensym(resp_var)
                          , colour = list_length
-                    )
+                         )
                     , width = 0.1
                     , height = 0.05
-        ) +
+                    ) +
         scale_colour_viridis_c() +
         labs(colour = "List length")
 
@@ -448,12 +452,12 @@
       #------year difference df-----------
 
       res$year_diff_df <- df %>%
-        dplyr::distinct(across(any_of(post_groups[!post_groups %in% time_cols]))) %>%
+        dplyr::distinct(across(any_of(context[!context %in% time_cols]))) %>%
         dplyr::full_join(test_years
                          , by = character()
                          ) %>%
         dplyr::mutate(list_length = if(has_ll) median(df$list_length) else NULL
-                      , list_length_log = if(has_ll) log(list_length) else NULL
+                      , log_list_length = if(has_ll) log(list_length) else NULL
                       , col = row.names(.)
                       , success = 0
                       , trials = 100
