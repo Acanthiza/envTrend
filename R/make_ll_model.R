@@ -30,7 +30,7 @@ make_ll_model <- function(taxa
   out_file <- fs::path(out_path,paste0("list-length_mod_",taxa,".rds"))
 
   geos <- df %>%
-    dplyr::distinct(across(any_of(geo_levels))) %>%
+    dplyr::distinct(across(any_of(geo_cols))) %>%
     nrow()
 
   grid_cells <- df %>%
