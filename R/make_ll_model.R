@@ -19,9 +19,9 @@
 #' @examples
 make_ll_model <- function(taxa
                           , df
+                          , out_file
                           , geo_cols
                           , random_col = "grid_l"
-                          , out_file
                           , ...
                           ) {
 
