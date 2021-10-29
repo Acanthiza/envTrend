@@ -2,7 +2,7 @@
 % Please edit documentation in R/make_overall.R
 \name{make_overall}
 \alias{make_overall}
-\title{Combine results from other models into an overall result for a taxa}
+\title{Combine results from other models into a single overall result}
 \usage{
 make_overall(taxa, common, year_diff_df)
 }
@@ -17,13 +17,13 @@ year.}
 \value{
 List with components
 \itemize{
-\item{year_diff_overall}{Dataframe of summarised difference}
-\item{year_diff_text}{A paragraph with rmarkdown formating describing the
+\item{overall}{Dataframe of summarised difference}
+\item{overall_text}{A paragraph with rmarkdown formating describing the
 result}
 \item{overall_plot}{ggplot object with distribution of overall credible
 values}
 }
 }
 \description{
-Combine results from other models into an overall result for a taxa
+Combine results from other models into a single overall result
 }

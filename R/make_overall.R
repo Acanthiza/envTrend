@@ -1,4 +1,5 @@
-#' Combine results from other models into an overall result for a taxa
+#' Combine results from other models into a single overall result
+#'
 #'
 #' @param taxa Character. Name of taxa.
 #' @param common Character. Common name of taxa.
@@ -7,8 +8,8 @@
 #'
 #' @return List with components
 #' \itemize{
-#'   \item{year_diff_overall}{Dataframe of summarised difference}
-#'   \item{year_diff_text}{A paragraph with rmarkdown formating describing the
+#'   \item{overall}{Dataframe of summarised difference}
+#'   \item{overall_text}{A paragraph with rmarkdown formating describing the
 #'   result}
 #'   \item{overall_plot}{ggplot object with distribution of overall credible
 #'   values}
@@ -25,7 +26,7 @@ make_overall <- function(taxa
 
   res <- list()
 
-  res$year_diff_overall <- year_diff_df %>%
+  res$overall <- year_diff_df %>%
     dplyr::summarise(n = n()
                      , increase = sum(diff > 0)/n
                      , decline = sum(diff < 0)/n
@@ -50,7 +51,7 @@ make_overall <- function(taxa
                                 )
                   )
 
-  res$yearDiffText <- paste0(
+  res$overall_text <- paste0(
     "_"
     , taxa
     , "_"
