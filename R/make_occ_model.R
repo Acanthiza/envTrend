@@ -28,19 +28,19 @@ make_occ_model <- function(taxa
 
   print(taxa)
 
-  geo2 <- geo_cols[length(geo_cols)]
+  # in creating dat_occ_prep, include large grid.
+  geo <- geo_cols[length(geo_cols)]
 
   dat_occ_prep <- df %>%
     dplyr::select(year
                     , any_of(geo_cols)
-                    , any_of(contains("grid"))
+                    , any_of(random_col)
                     , success
                     ) %>%
     tidyr::nest(data = -c(year
                           , any_of(geo_cols)
                           )
                 ) %>%
-    dplyr::filter(map_lgl(data,~sum(.$success) > 0)) %>%
     dplyr::mutate(data = map(data, . %>%
                                dplyr::group_by(across(any_of(random_col))) %>%
                                dplyr::mutate(vis = row_number()) %>%
