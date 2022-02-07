@@ -57,7 +57,7 @@ make_overall <- function(taxa
     , "_"
     , if(!is.null(common)) paste0(" (",common,")")
     , " was "
-    , res$year_diff_overall$text
+    , res$overall$text
     , " across "
     , aoi_fullname
     , " based on "
@@ -72,7 +72,7 @@ make_overall <- function(taxa
   )
 
   res$overall_plot <- year_diff_df %>%
-    dplyr::mutate(likelihood = res$year_diff_overall$likelihood) %>%
+    dplyr::mutate(likelihood = res$overall$likelihood) %>%
     ggplot(aes(diff,fill = likelihood)) +
     geom_density() +
     geom_vline(aes(xintercept = 0)
