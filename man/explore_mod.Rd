@@ -34,7 +34,7 @@ explore_mod(
 
 \item{exp_var}{What are the variables to include in model exploration?}
 
-\item{max_levels}{Maximum number of classes to include in categorial plots.}
+\item{max_levels}{Maximum number of classes to include in categorical plots.}
 
 \item{draws}{Number of draws from posterior distribution to display in plots.}
 
@@ -60,5 +60,5 @@ A list with components
 }
 }
 \description{
-Explore (pre- and most-) model results.
+NOTE. Code still contains references to \code{geo2}.
 }

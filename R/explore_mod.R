@@ -1,6 +1,8 @@
 
 #' Explore (pre- and most-) model results.
 #'
+#' NOTE. Code still contains references to `geo2`.
+#'
 #' @param taxa Scientific name of taxa (for labelling things).
 #' @param common Common name of taxa (also used in labels).
 #' @param df Data used for model saved at `mod_path`.
@@ -8,7 +10,7 @@
 #' @param mod_type Type of model (e.g. 'reporting rate', or 'occupancy')
 #' @param resp_var What is the response variable?
 #' @param exp_var What are the variables to include in model exploration?
-#' @param max_levels Maximum number of classes to include in categorial plots.
+#' @param max_levels Maximum number of classes to include in categorical plots.
 #' @param draws Number of draws from posterior distribution to display in plots.
 #' @param post_groups Character names of variables to include in model results.
 #' @param tests Years at which to predict (and compare change) as dataframe
@@ -514,7 +516,7 @@
         tidyr::unnest(cols = c(likelihood)) %>%
         dplyr::mutate(text = paste0(tolower(likelihood)
                                     , " to be lower in "
-                                    , geo2
+                                    , !!ensym(geo2)
                                     , " IBRA Subregion ("
                                     , 100*round(lower,2)
                                     , "% chance)"

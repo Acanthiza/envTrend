@@ -82,12 +82,12 @@ make_overall <- function(taxa
     scale_fill_viridis_d(drop = FALSE) +
     labs(title = plot_titles
          , subtitle = paste0("Distribution of credible values for change between "
-                             ,recent
+                             , recent
                              ," and "
-                             ,reference
+                             , reference
                              )
          , x = "Difference"
-         , y = "IBRA Subregion"
+         , y = "Likelihood of difference"
          , fill = "Likelihood of decrease"
          , caption = paste0("Red dotted line indicates no change from ",reference)
          )
