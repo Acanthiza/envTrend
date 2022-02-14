@@ -20,6 +20,16 @@
 make_overall <- function(taxa
                          , common
                          , year_diff_df
+                         , quants = c(0.005
+                                      , 0.025
+                                      , 0.05
+                                      , 0.25
+                                      , 0.5
+                                      , 0.75
+                                      , 0.95
+                                      , 0.975
+                                      , 0.995
+                                      )
                          ) {
 
   plot_titles <- bquote(~italic(.(taxa))*":" ~ .(common))
@@ -32,8 +42,8 @@ make_overall <- function(taxa
                      , decline = sum(diff < 0)/n
                      , meanEff = mean(diff)
                      , medianEff = median(diff)
-                     , cilo = quantile(diff, probs = 0.05)
-                     , ciup = quantile(diff, probs = 0.95)
+                     , tibble::enframe(quantile(diff, quants), "quantile", "value") %>%
+                       tidyr::pivot_wider(names_from = "quantile", values_from = "value")
                      ) %>%
     dplyr::mutate(likelihood = map(decline
                                    , ~cut(.

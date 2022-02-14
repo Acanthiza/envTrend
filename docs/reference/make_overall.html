@@ -117,7 +117,12 @@
     <p>Combine results from other models into a single overall result</p>
     </div>
 
-    <pre class="usage"><span class='fu'>make_overall</span><span class='op'>(</span><span class='va'>taxa</span>, <span class='va'>common</span>, <span class='va'>year_diff_df</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>make_overall</span><span class='op'>(</span>
+  <span class='va'>taxa</span>,
+  <span class='va'>common</span>,
+  <span class='va'>year_diff_df</span>,
+  quants <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.005</span>, <span class='fl'>0.025</span>, <span class='fl'>0.05</span>, <span class='fl'>0.25</span>, <span class='fl'>0.5</span>, <span class='fl'>0.75</span>, <span class='fl'>0.95</span>, <span class='fl'>0.975</span>, <span class='fl'>0.995</span><span class='op'>)</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">

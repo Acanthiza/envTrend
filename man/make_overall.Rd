@@ -4,7 +4,12 @@
 \alias{make_overall}
 \title{Combine results from other models into a single overall result}
 \usage{
-make_overall(taxa, common, year_diff_df)
+make_overall(
+  taxa,
+  common,
+  year_diff_df,
+  quants = c(0.005, 0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975, 0.995)
+)
 }
 \arguments{
 \item{taxa}{Character. Name of taxa.}
