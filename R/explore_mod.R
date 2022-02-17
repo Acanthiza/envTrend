@@ -50,8 +50,8 @@
 
     #-------do_run--------
 
-    out_file <- gsub("\\.rds"
-                     , "_res.rds"
+    out_file <- gsub("mod"
+                     , "res"
                      , mod_path
                      )
 

@@ -28,15 +28,13 @@ make_occ_model <- function(taxa
 
   print(taxa)
 
-  # in creating dat_occ_prep, include large grid.
-  geo <- geo_cols[length(geo_cols)]
-
   dat_occ_prep <- df %>%
-    dplyr::select(year
+    dplyr::select(c(year
                     , any_of(geo_cols)
                     , any_of(random_col)
                     , success
-                    ) %>%
+                    )
+                  ) %>%
     tidyr::nest(data = -c(year
                           , any_of(geo_cols)
                           )
@@ -57,9 +55,9 @@ make_occ_model <- function(taxa
     dplyr::filter(trials > 2) %>%
     dplyr::group_by(across(any_of(geo_cols))) %>%
     dplyr::mutate(years = n_distinct(year)) %>%
-    dplyr::filter(years > 3)
+    dplyr::filter(years > 2)
 
-  if(nrow(dat_occ_prep) > 3) {
+  if(nrow(dat_occ_prep) > 2) {
 
     dat_occ <- dat_occ_prep %>%
       dplyr::mutate(umf = purrr::map(data
@@ -78,7 +76,9 @@ make_occ_model <- function(taxa
                     , occ = if_else(occ == 0, 0.00000001, occ)
                     , occ = if_else(occ == 1, 0.99999999, occ)
                     , det = purrr::map_dbl(mod_year
-                                           , ~unmarked::backTransform(.,type = "det")@estimate
+                                           , ~unmarked::backTransform(.
+                                                                      , type = "det"
+                                                                      )@estimate
                                            )
                     ) %>%
       dplyr::select(where(Negate(is.list))) %>%
