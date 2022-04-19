@@ -129,7 +129,8 @@
   draws <span class='op'>=</span> <span class='fl'>200</span>,
   <span class='va'>post_groups</span>,
   tests <span class='op'>=</span> <span class='cn'>NULL</span>,
-  re_run <span class='op'>=</span> <span class='cn'>FALSE</span>
+  re_run <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  quant_probs <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.05</span>, <span class='fl'>0.5</span>, <span class='fl'>0.95</span><span class='op'>)</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -185,6 +186,10 @@ to references and recent.</p></td>
       <th>re_run</th>
       <td><p>Logical. If file <code>gsub("\\.rds", "_res.rds", mod_path)</code> already
 exists, should it be re-run?</p></td>
+    </tr>
+    <tr>
+      <th>quant_probs</th>
+      <td><p>Quantiles for summarising.</p></td>
     </tr>
     </table>
 

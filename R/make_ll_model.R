@@ -25,6 +25,8 @@ make_ll_model <- function(taxa
                           , ...
                           ) {
 
+  taxa <- factor(taxa)
+
   print(taxa)
 
   geos <- df %>%
@@ -44,33 +46,37 @@ make_ll_model <- function(taxa
                                                   , "s(year, k = 4, bs = 'ts') +"
                                                   , "s(year, k = 4, by = "
                                                   , geo2
-                                                  , ", bs = 'ts') +"
-                                                  , "s(year, k = 4, by = log_list_length, bs = 'ts') + "
+                                                  , ", bs = 'ts') + "
                                                   , geo2
                                                   , "+"
+                                                  , "log_list_length +"
                                                   , geo2
                                                   , "*log_list_length"
                                                   )
                                            )
+
                                 , data = df
                                 , family = stats::binomial()
-                                , random = as.formula(paste0("~(1|"
-                                                             , random_col
-                                                             , ")"
-                                                             )
-                                                      )
+                                , random = if(grid_cells > 1) {
+
+                                  as.formula(paste0("~(1|"
+                                                    , random_col
+                                                    , ")"
+                                                    )
+                                             )
+
+                                } else NULL
                                 , ...
                                 )
 
   } else {
 
-    mod <- stan_gamm4(cbind(success,trials-success) ~ s(year, k = 4, bs = "ts") +
-                        s(year, k = 4, by = log_list_length, bs = "ts") +
-                        log_list_length
-                      , data = df
-                      , random = if(grid_cells > 1) {
+    mod <- rstanarm::stan_gamm4(cbind(success,trials-success) ~ s(year, k = 4, bs = "ts") +
+                                  log_list_length
+                                , data = df
+                                , random = if(grid_cells > 1) {
 
-                        as.formula(paste0("~(1|"
+                                  as.formula(paste0("~(1|"
                                           , random_col
                                           , ")"
                                           )
@@ -83,6 +89,10 @@ make_ll_model <- function(taxa
 
   }
 
-  write_rds(mod,out_file)
+  rio::export(mod,out_file)
+
+  rm(mod)
+
+  gc()
 
 }

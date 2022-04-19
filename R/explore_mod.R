@@ -18,6 +18,7 @@
 #' to references and recent.
 #' @param re_run Logical. If file `gsub("\\.rds", "_res.rds", mod_path)` already
 #' exists, should it be re-run?
+#' @param quant_probs Quantiles for summarising.
 #'
 #' @return A list with components
 #' \itemize{
@@ -44,15 +45,28 @@
                           , post_groups
                           , tests = NULL
                           , re_run = FALSE
+                          , quant_probs = c(0.05, 0.5, 0.95)
                           ) {
+
+    taxa <- as.character(taxa)
+    common <- as.character(common)
 
     print(taxa)
 
+    if(!exists("geo2")) geo2 <- "IBRA_SUB_N"
+
+    if(!exists("time_cols")) time_cols <- "year"
+
     #-------do_run--------
 
-    out_file <- gsub("mod"
-                     , "res"
+    out_file <- gsub("_.*\\.rds"
+                     , ""
                      , mod_path
+                     )
+
+    out_file <- gsub("\\.rds"
+                     , "_summary.rds"
+                     , out_file
                      )
 
 
@@ -81,7 +95,7 @@
 
       context <- c(post_groups, mod_type)
 
-      mod <- read_rds(mod_path)
+      mod <- rio::import(mod_path)
 
       #-------setup explore-------
 
@@ -275,7 +289,7 @@
 
       res$pred <- df %>%
         dplyr::distinct(across(any_of(context))) %>%
-        dplyr::mutate(list_length = if(has_ll) median(df$list_length) else NULL
+        dplyr::mutate(list_length = if(has_ll) median(exp(df$log_list_length)) else NULL
                       , log_list_length = if(has_ll) log(list_length) else NULL
                       , col = row.names(.)
                       , success = if(is_binomial_mod) 0 else NULL
@@ -320,10 +334,10 @@
         dplyr::mutate(success = 0
                       , trials = 100
                       ) %>%
-        dplyr::full_join(tibble(probs = quant_probs[2]) %>%
+        dplyr::full_join(tibble(probs = 0.5) %>%
                            {if(has_ll) (.) %>%
                                dplyr::mutate(list_length = map_dbl(probs
-                                                                   , ~quantile(unique(df$list_length)
+                                                                   , ~quantile(unique(exp(df$log_list_length))
                                                                               , probs = .
                                                                               )
                                                                    )
@@ -388,7 +402,7 @@
         geom_jitter(data = df
                     ,aes(year
                          , !!ensym(resp_var)
-                         , colour = list_length
+                         , colour = exp(log_list_length)
                     )
                     , width = 0.1
                     , height = 0.05
@@ -432,7 +446,7 @@
         geom_jitter(data = df
                     ,aes(year
                          ,!!ensym(resp_var)
-                         , colour = list_length
+                         , colour = exp(log_list_length)
                          )
                     , width = 0.1
                     , height = 0.05
@@ -462,7 +476,7 @@
         dplyr::full_join(test_years
                          , by = character()
                          ) %>%
-        dplyr::mutate(list_length = if(has_ll) median(df$list_length) else NULL
+        dplyr::mutate(list_length = if(has_ll) median(exp(df$log_list_length)) else NULL
                       , log_list_length = if(has_ll) log(list_length) else NULL
                       , col = row.names(.)
                       , success = 0
@@ -539,7 +553,7 @@
                                        )
                       ) %>%
         tidyr::unnest(cols = c(likelihood)) %>%
-        dplyr::mutate(likelihood = fct_expand(likelihood,levels(lulikelihood$likelihood))) %>%
+        dplyr::mutate(likelihood = forcats::fct_expand(likelihood,levels(lulikelihood$likelihood))) %>%
         ggplot(aes(diff
                    , !!ensym(geo2)
                    , fill = likelihood
@@ -569,9 +583,13 @@
                                 )
              )
 
-      write_rds(res
-                , out_file
-                )
+      rio::export(res
+                  , out_file
+                  )
+
+      rm(res)
+
+      gc()
 
     } else {
 

@@ -16,7 +16,8 @@ explore_mod(
   draws = 200,
   post_groups,
   tests = NULL,
-  re_run = FALSE
+  re_run = FALSE,
+  quant_probs = c(0.05, 0.5, 0.95)
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ to references and recent.}
 
 \item{re_run}{Logical. If file \code{gsub("\\\\.rds", "_res.rds", mod_path)} already
 exists, should it be re-run?}
+
+\item{quant_probs}{Quantiles for summarising.}
 }
 \value{
 A list with components
