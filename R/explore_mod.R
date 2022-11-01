@@ -471,7 +471,7 @@
       #------year difference df-----------
 
       res$year_diff_df <- df %>%
-        dplyr::distinct(across(any_of(context[!context %in% time_cols]))) %>%
+        dplyr::distinct(across(any_of(context[!context %in% time_var]))) %>%
         dplyr::full_join(tests
                          , by = character()
                          ) %>%
