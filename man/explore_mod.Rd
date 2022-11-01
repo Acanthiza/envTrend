@@ -9,12 +9,13 @@ explore_mod(
   common,
   df,
   mod_path,
+  out_file = gsub("\\\\.rds", "_summary.rds", mod_path),
   mod_type,
   resp_var = "prop",
-  exp_var,
+  geo_var = "IBRA_SUB_N",
+  time_var = "year",
   max_levels = 30,
   draws = 200,
-  post_groups,
   tests = NULL,
   re_run = FALSE,
   quant_probs = c(0.05, 0.5, 0.95)
@@ -29,24 +30,26 @@ explore_mod(
 
 \item{mod_path}{Path to saved model.}
 
+\item{out_file}{Path to save exploration results back to.}
+
 \item{mod_type}{Type of model (e.g. 'reporting rate', or 'occupancy')}
 
 \item{resp_var}{What is the response variable?}
 
-\item{exp_var}{What are the variables to include in model exploration?}
+\item{geo_var}{Categorical variable in the model (usually biogeographic)}
+
+\item{time_var}{Continuous time variable (usually \code{year})}
 
 \item{max_levels}{Maximum number of classes to include in categorical plots.}
 
 \item{draws}{Number of draws from posterior distribution to display in plots.}
 
-\item{post_groups}{Character names of variables to include in model results.}
-
 \item{tests}{Years at which to predict (and compare change) as dataframe
 with type = c("reference", "recent") and year = four-digit year corresponding
 to references and recent.}
 
-\item{re_run}{Logical. If file \code{gsub("\\\\.rds", "_res.rds", mod_path)} already
-exists, should it be re-run?}
+\item{re_run}{Logical. If file \code{out_file} already exists, should it be
+re-run?}
 
 \item{quant_probs}{Quantiles for summarising.}
 }
@@ -59,9 +62,9 @@ A list with components
 \item{y_vs_num}{ggplot object. Response variable vs numeric variables with \code{geom_smooth()}.}
 \item{pairs}{\code{GGally::ggpairs} object from \code{df}.}
 \item{pred}{Dataframe of \code{posterior_predict} for levels of interest.}
-\item{res}{\code{pred} summarised by \code{post_groups}.}
+\item{res}{\code{pred} summarised by \code{c(resp_var, time_var)}.}
 }
 }
 \description{
-NOTE. Code still contains references to \code{geo2}.
+Explore (pre- and most-) model results.
 }

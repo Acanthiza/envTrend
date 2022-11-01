@@ -1,23 +1,23 @@
 
 #' Explore (pre- and most-) model results.
 #'
-#' NOTE. Code still contains references to `geo2`.
 #'
 #' @param taxa Scientific name of taxa (for labelling things).
 #' @param common Common name of taxa (also used in labels).
 #' @param df Data used for model saved at `mod_path`.
 #' @param mod_path Path to saved model.
+#' @param out_file Path to save exploration results back to.
 #' @param mod_type Type of model (e.g. 'reporting rate', or 'occupancy')
 #' @param resp_var What is the response variable?
-#' @param exp_var What are the variables to include in model exploration?
+#' @param geo_var Categorical variable in the model (usually biogeographic)
+#' @param time_var Continuous time variable (usually `year`)
 #' @param max_levels Maximum number of classes to include in categorical plots.
 #' @param draws Number of draws from posterior distribution to display in plots.
-#' @param post_groups Character names of variables to include in model results.
 #' @param tests Years at which to predict (and compare change) as dataframe
 #' with type = c("reference", "recent") and year = four-digit year corresponding
 #' to references and recent.
-#' @param re_run Logical. If file `gsub("\\.rds", "_res.rds", mod_path)` already
-#' exists, should it be re-run?
+#' @param re_run Logical. If file `out_file` already exists, should it be
+#' re-run?
 #' @param quant_probs Quantiles for summarising.
 #'
 #' @return A list with components
@@ -28,7 +28,7 @@
 #'   \item{y_vs_num}{ggplot object. Response variable vs numeric variables with `geom_smooth()`.}
 #'   \item{pairs}{`GGally::ggpairs` object from `df`.}
 #'   \item{pred}{Dataframe of `posterior_predict` for levels of interest.}
-#'   \item{res}{`pred` summarised by `post_groups`.}
+#'   \item{res}{`pred` summarised by `c(resp_var, time_var)`.}
 #' }
 #' @export
 #'
@@ -37,12 +37,13 @@
                           , common
                           , df
                           , mod_path
+                          , out_file = gsub("\\.rds", "_summary.rds", mod_path)
                           , mod_type
                           , resp_var = "prop"
-                          , exp_var
+                          , geo_var = "IBRA_SUB_N"
+                          , time_var = "year"
                           , max_levels = 30
                           , draws = 200
-                          , post_groups
                           , tests = NULL
                           , re_run = FALSE
                           , quant_probs = c(0.05, 0.5, 0.95)
@@ -53,22 +54,7 @@
 
     print(taxa)
 
-    if(!exists("geo2")) geo2 <- "IBRA_SUB_N"
-
-    if(!exists("time_cols")) time_cols <- "year"
-
     #-------do_run--------
-
-    out_file <- gsub("_.*\\.rds"
-                     , ""
-                     , mod_path
-                     )
-
-    out_file <- gsub("\\.rds"
-                     , "_summary.rds"
-                     , out_file
-                     )
-
 
     do_run <- if(file.exists(out_file)) {
 
@@ -93,7 +79,7 @@
 
       recent <- tests$year[tests$type == "recent"]
 
-      context <- c(post_groups, mod_type)
+      context <- c(geo_var, time_var, mod_type)
 
       mod <- rio::import(mod_path)
 
@@ -106,7 +92,7 @@
       has_ll <- sum(grepl("list_length",names(mod$coefficients))) > 0
 
       if(!resp_var %in% names(df)) df <- df %>%
-        dplyr::group_by(across(any_of(exp_var))) %>%
+        dplyr::group_by(across(any_of(context))) %>%
         dplyr::summarise(!!ensym(resp_var) := sum(success)/n()) %>%
         dplyr::ungroup()
 
@@ -145,21 +131,21 @@
                                    dplyr::mutate(levels = n_distinct(value)) %>%
                                    dplyr::ungroup() %>%
                                    dplyr::filter(levels < max_levels)
-        ) +
+                                 ) +
           geom_histogram(aes(value)
                          , stat = "count"
-          ) +
+                         ) +
           facet_wrap(~variable
                      , scales = "free"
-          ) +
+                     ) +
           theme(axis.text.x = element_text(angle = 90
                                            , vjust = 0.5
                                            , hjust = 1
-          )
-          ) +
+                                           )
+                ) +
           labs(title = plot_titles
                , subtitle = "Count of levels within character variables"
-          )
+               )
 
         # resp_var vs character
         res$y_vs_char <-ggplot(dat_exp %>%
@@ -384,7 +370,7 @@
       #-------res plot_line-----------
 
       p <- plot_data %>%
-        ggplot(aes(x = year, y = !!ensym(resp_var))) +
+        ggplot(aes(x = !!ensym(time_var), y = !!ensym(resp_var))) +
         geom_line(aes(y = .value, group = .draw)
                   , alpha = 0.5
                   ) +
@@ -392,7 +378,7 @@
                    , linetype = 2
                    , colour = "red"
                    ) +
-        facet_wrap(as.formula(paste0("~ ",geo2))) +
+        facet_wrap(as.formula(paste0("~ ", geo_var))) +
         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
         labs(title = plot_titles
              , subtitle = sub_title_line
@@ -428,26 +414,39 @@
 
       p <- ggplot() +
         geom_ribbon(data = res$res
-                    , aes(year,modMean,ymin = modci90lo, ymax = modci90up)
+                    , aes(!!ensym(time_var)
+                          , modMean
+                          , ymin = modci90lo
+                          , ymax = modci90up
+                          )
                     , alpha = 0.4
                     ) +
         geom_line(data = res$res
-                  , aes(year,modMean)
+                  , aes(!!ensym(time_var)
+                        , modMean
+                        )
                   , linetype = 1
                   , size = 1.5
                   ) +
-        geom_vline(xintercept = tests$year, linetype = 2, colour = "red") +
-        facet_wrap(as.formula(paste0("~ ", geo2))) +
+        geom_vline(xintercept = tests$year
+                   , linetype = 2
+                   , colour = "red"
+                   ) +
+        facet_wrap(as.formula(paste0("~ "
+                                     , geo_var
+                                     )
+                              )
+                   ) +
         labs(title = plot_titles
              , subtitle = sub_title_ribbon
              )
 
       if(has_ll) p <- p +
         geom_jitter(data = df
-                    ,aes(year
-                         ,!!ensym(resp_var)
-                         , colour = exp(log_list_length)
-                         )
+                    , aes(!!ensym(time_var)
+                          , !!ensym(resp_var)
+                          , colour = exp(log_list_length)
+                          )
                     , width = 0.1
                     , height = 0.05
                     ) +
@@ -456,13 +455,13 @@
 
       if(!has_ll) p <- p +
         geom_jitter(data = df
-                    ,aes(year
-                         , !!ensym(resp_var)
-                         , colour = trials
-                    )
+                    , aes(!!ensym(time_var)
+                          , !!ensym(resp_var)
+                          , colour = trials
+                          )
                     , width = 0.1
                     , height = 0.05
-        ) +
+                    ) +
         scale_colour_viridis_c() +
         labs(colour = "Trials")
 
@@ -473,7 +472,7 @@
 
       res$year_diff_df <- df %>%
         dplyr::distinct(across(any_of(context[!context %in% time_cols]))) %>%
-        dplyr::full_join(test_years
+        dplyr::full_join(tests
                          , by = character()
                          ) %>%
         dplyr::mutate(list_length = if(has_ll) median(exp(df$log_list_length)) else NULL
@@ -492,12 +491,15 @@
                                                      )
                                    ) %>%
                            tibble::rownames_to_column(var = "row") %>%
-                           tidyr::gather(col,value,2:ncol(.))
+                           tidyr::gather(col
+                                         , value
+                                         , 2:ncol(.)
+                                         )
                          ) %>%
         dplyr::select(-c(col)) %>%
         dplyr::mutate(value = as.numeric(if(is_binomial_mod) value/trials else value)) %>%
         tidyr::pivot_wider(names_from = "type"
-                           , values_from = c("year","value")
+                           , values_from = c(any_of(time_var),"value")
                            ) %>%
         setNames(gsub("\\d{4}","",names(.))) %>%
         dplyr::mutate(diff = as.numeric(value_recent-value_reference))
@@ -530,8 +532,8 @@
         tidyr::unnest(cols = c(likelihood)) %>%
         dplyr::mutate(text = paste0(tolower(likelihood)
                                     , " to be lower in "
-                                    , !!ensym(geo2)
-                                    , " IBRA Subregion ("
+                                    , !!ensym(geo_var)
+                                    , " ("
                                     , 100*round(lower,2)
                                     , "% chance)"
                                     )
@@ -541,8 +543,8 @@
       #------year difference plot--------
 
       res$year_diff_plot <- res$year_diff_df %>%
-        dplyr::group_by(across(any_of(geo2))) %>%
-        dplyr::mutate(lower = sum(diff<0)/nCheck) %>%
+        dplyr::group_by(across(any_of(geo_var))) %>%
+        dplyr::mutate(lower = sum(diff < 0) / nCheck) %>%
         dplyr::ungroup() %>%
         dplyr::mutate(likelihood = map(lower
                                        , ~cut(.
@@ -553,9 +555,12 @@
                                        )
                       ) %>%
         tidyr::unnest(cols = c(likelihood)) %>%
-        dplyr::mutate(likelihood = forcats::fct_expand(likelihood,levels(lulikelihood$likelihood))) %>%
+        dplyr::mutate(likelihood = forcats::fct_expand(likelihood
+                                                       ,levels(lulikelihood$likelihood)
+                                                       )
+                      ) %>%
         ggplot(aes(diff
-                   , !!ensym(geo2)
+                   , !!ensym(geo_var)
                    , fill = likelihood
                    )
                ) +
@@ -593,7 +598,7 @@
 
     } else {
 
-      print("alredy done")
+      print("already done")
 
       }
 

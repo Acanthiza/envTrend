@@ -40,7 +40,7 @@
 
 
 <meta property="og:title" content="Explore (pre- and most-) model results. — explore_mod" />
-<meta property="og:description" content="NOTE. Code still contains references to geo2." />
+<meta property="og:description" content="Explore (pre- and most-) model results." />
 
 
 
@@ -114,7 +114,7 @@
     </div>
 
     <div class="ref-description">
-    <p>NOTE. Code still contains references to <code>geo2</code>.</p>
+    <p>Explore (pre- and most-) model results.</p>
     </div>
 
     <pre class="usage"><span class='fu'>explore_mod</span><span class='op'>(</span>
@@ -122,12 +122,13 @@
   <span class='va'>common</span>,
   <span class='va'>df</span>,
   <span class='va'>mod_path</span>,
+  out_file <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/grep.html'>gsub</a></span><span class='op'>(</span><span class='st'>"\\.rds"</span>, <span class='st'>"_summary.rds"</span>, <span class='va'>mod_path</span><span class='op'>)</span>,
   <span class='va'>mod_type</span>,
   resp_var <span class='op'>=</span> <span class='st'>"prop"</span>,
-  <span class='va'>exp_var</span>,
+  geo_var <span class='op'>=</span> <span class='st'>"IBRA_SUB_N"</span>,
+  time_var <span class='op'>=</span> <span class='st'>"year"</span>,
   max_levels <span class='op'>=</span> <span class='fl'>30</span>,
   draws <span class='op'>=</span> <span class='fl'>200</span>,
-  <span class='va'>post_groups</span>,
   tests <span class='op'>=</span> <span class='cn'>NULL</span>,
   re_run <span class='op'>=</span> <span class='cn'>FALSE</span>,
   quant_probs <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.05</span>, <span class='fl'>0.5</span>, <span class='fl'>0.95</span><span class='op'>)</span>
@@ -153,6 +154,10 @@
       <td><p>Path to saved model.</p></td>
     </tr>
     <tr>
+      <th>out_file</th>
+      <td><p>Path to save exploration results back to.</p></td>
+    </tr>
+    <tr>
       <th>mod_type</th>
       <td><p>Type of model (e.g. 'reporting rate', or 'occupancy')</p></td>
     </tr>
@@ -161,8 +166,12 @@
       <td><p>What is the response variable?</p></td>
     </tr>
     <tr>
-      <th>exp_var</th>
-      <td><p>What are the variables to include in model exploration?</p></td>
+      <th>geo_var</th>
+      <td><p>Categorical variable in the model (usually biogeographic)</p></td>
+    </tr>
+    <tr>
+      <th>time_var</th>
+      <td><p>Continuous time variable (usually <code>year</code>)</p></td>
     </tr>
     <tr>
       <th>max_levels</th>
@@ -173,10 +182,6 @@
       <td><p>Number of draws from posterior distribution to display in plots.</p></td>
     </tr>
     <tr>
-      <th>post_groups</th>
-      <td><p>Character names of variables to include in model results.</p></td>
-    </tr>
-    <tr>
       <th>tests</th>
       <td><p>Years at which to predict (and compare change) as dataframe
 with type = c("reference", "recent") and year = four-digit year corresponding
@@ -184,8 +189,8 @@ to references and recent.</p></td>
     </tr>
     <tr>
       <th>re_run</th>
-      <td><p>Logical. If file <code>gsub("\\.rds", "_res.rds", mod_path)</code> already
-exists, should it be re-run?</p></td>
+      <td><p>Logical. If file <code>out_file</code> already exists, should it be
+re-run?</p></td>
     </tr>
     <tr>
       <th>quant_probs</th>
@@ -202,7 +207,7 @@ exists, should it be re-run?</p></td>
 <li><p>y_vs_numggplot object. Response variable vs numeric variables with <code>geom_smooth()</code>.</p></li>
 <li><p>pairs<code><a href='https://ggobi.github.io/ggally/reference/ggpairs.html'>GGally::ggpairs</a></code> object from <code>df</code>.</p></li>
 <li><p>predDataframe of <code>posterior_predict</code> for levels of interest.</p></li>
-<li><p>res<code>pred</code> summarised by <code>post_groups</code>.</p></li>
+<li><p>res<code>pred</code> summarised by <code>c(resp_var, time_var)</code>.</p></li>
 </ul>
 
 
