@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Function reference • envTrend</title>
+<title>Dataframe of likelihood thresholds and definitions — lulikelihood • envTrend</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,8 @@
 
 
 
-<meta property="og:title" content="Function reference" />
+<meta property="og:title" content="Dataframe of likelihood thresholds and definitions — lulikelihood" />
+<meta property="og:description" content="Following the intergovernmental panel on climate change IPCC." />
 
 
 
@@ -58,7 +59,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-reference-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -105,90 +106,66 @@
       </header>
 
 <div class="row">
-  <div class="contents col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Reference</h1>
+    <h1>Dataframe of likelihood thresholds and definitions</h1>
+    <small class="dont-index">Source: <a href='https://github.com/Acanthiza/envTrend/blob/master/R/data.R'><code>R/data.R</code></a></small>
+    <div class="hidden name"><code>lulikelihood.Rd</code></div>
     </div>
 
-    <table class="ref-index">
+    <div class="ref-description">
+    <p>Following the intergovernmental panel on climate change <a href='https://www.ipcc.ch/site/assets/uploads/2017/08/AR5_Uncertainty_Guidance_Note.pdf'>IPCC</a>.</p>
+    </div>
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
+    <pre class="usage"><span class='va'>lulikelihood</span></pre>
 
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      
-      
-    </tbody><tbody>
-      
-      
-      <tr>
-        
-        <td>
-          <p><code><a href="add_list_length.html">add_list_length()</a></code> </p>
-        </td>
-        <td><p>Add a context-specific list-length</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="explore_mod.html">explore_mod()</a></code> </p>
-        </td>
-        <td><p>Explore (pre- and most-) model results.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="filter_list_df.html">filter_list_df()</a></code> </p>
-        </td>
-        <td><p>Filter occurrence data to a set of specifications</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="lulikelihood.html">lulikelihood</a></code> </p>
-        </td>
-        <td><p>Dataframe of likelihood thresholds and definitions</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="make_cooccur.html">make_cooccur()</a></code> </p>
-        </td>
-        <td><p>Find taxa pairwise co-occurrence patterns</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="make_ll_model.html">make_ll_model()</a></code> </p>
-        </td>
-        <td><p>Make, and save to disk, a list-length corrected reporting rate model.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="make_occ_model.html">make_occ_model()</a></code> </p>
-        </td>
-        <td><p>Make, and save to disk, an occupancy model.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="make_overall.html">make_overall()</a></code> </p>
-        </td>
-        <td><p>Combine results from other models into a single overall result</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="make_rr_model.html">make_rr_model()</a></code> </p>
-        </td>
-        <td><p>Make, and save to disk, a reporting rate model.</p></td>
-      </tr>
-    </tbody>
-    </table>
+
+    <h2 class="hasAnchor" id="format"><a class="anchor" href="#format"></a>Format</h2>
+
+    
+<h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>A data frame with 9 rows and
+7 variables:
+<dl>
+<dt>likelihood</dt><dd><p>Factor. Definitions.</p></dd>
+<dt>maxVal</dt><dd><p>Double. Maximum proportion to fall in likelihood category</p></dd>
+<dt>range</dt><dd><p>Factor. Result of <code>cut(maxVal, breaks = c(0,.$maxVal))</code></p></dd>
+<dt>loose</dt><dd><p>Factor wit+
+0
+-)` levels</p></dd>
+<dt>very</dt><dd><p>Factor wit++
++
+0</p></dd>
+
+
+--)` levels
+<dt>extreme</dt><dd><p>Factor wit+++
+++
++
+0</p></dd>
+
+
+--
+---)` levels
+<dt>exceptional</dt><dd><p>Factor wit++++
++++
+++
++
+0</p></dd>
+
+
+--
+
+----)` levels
+...
+
+</dl>
+</h3>
+<p></p>
+    <h2 class="hasAnchor" id="source"><a class="anchor" href="#source"></a>Source</h2>
+
+    <p><a href='https://www.ipcc.ch/site/assets/uploads/2017/08/AR5_Uncertainty_Guidance_Note.pdf'>https://www.ipcc.ch/site/assets/uploads/2017/08/AR5_Uncertainty_Guidance_Note.pdf</a></p>
+
   </div>
-
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
       <h2 data-toc-skip>Contents</h2>
