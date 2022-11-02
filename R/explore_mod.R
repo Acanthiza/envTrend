@@ -119,91 +119,122 @@
       # Character variables
       if(has_character) {
 
+        plot_data <- dat_exp %>%
+          dplyr::mutate(across(where(is.factor),as.character)) %>%
+          dplyr::select_if(is.character) %>%
+          tidyr::gather(variable,value,1:ncol(.)) %>%
+          dplyr::group_by(variable) %>%
+          dplyr::mutate(levels = n_distinct(value)) %>%
+          dplyr::ungroup() %>%
+          dplyr::filter(levels < max_levels)
+
         # count character
-        res$count_char <- ggplot(dat_exp %>%
-                                   dplyr::mutate(across(where(is.factor),as.character)) %>%
-                                   dplyr::select_if(is.character) %>%
-                                   tidyr::gather(variable,value,1:ncol(.)) %>%
-                                   dplyr::group_by(variable) %>%
-                                   dplyr::mutate(levels = n_distinct(value)) %>%
-                                   dplyr::ungroup() %>%
-                                   dplyr::filter(levels < max_levels)
-                                 ) +
-          geom_histogram(aes(value)
-                         , stat = "count"
+        res$count_char <- ggplot2::ggplot(data = plot_data) +
+          ggplot2::geom_histogram(ggplot2::aes(.data$value)
+                                  , stat = "count"
+                                  ) +
+          ggplot2::facet_wrap(~ .data$variable
+                              , scales = "free"
+                              ) +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
+                                                             , vjust = 0.5
+                                                             , hjust = 1
+                                                             )
                          ) +
-          facet_wrap(~variable
-                     , scales = "free"
-                     ) +
-          theme(axis.text.x = element_text(angle = 90
-                                           , vjust = 0.5
-                                           , hjust = 1
-                                           )
-                ) +
-          labs(title = plot_titles
-               , subtitle = "Count of levels within character variables"
-               )
+          ggplot2::labs(title = plot_titles
+                        , subtitle = "Count of levels within character variables"
+                        )
 
         # resp_var vs character
-        res$y_vs_char <-ggplot(dat_exp %>%
-                                 dplyr::mutate({{resp_var}} := factor(!!ensym(resp_var))) %>%
-                                 dplyr::mutate_if(is.factor,as.character) %>%
-                                 dplyr::select_if(is.character) %>%
-                                 dplyr::mutate({{resp_var}} := as.numeric(!!ensym(resp_var))) %>%
-                                 tidyr::gather(variable,value,2:ncol(.)) %>%
-                                 dplyr::group_by(variable) %>%
-                                 dplyr::mutate(levels = n_distinct(value)) %>%
-                                 dplyr::ungroup() %>%
-                                 dplyr::filter(levels < max_levels)
-                               ) +
-          geom_boxplot(aes(value,!!ensym(resp_var))) +
-          facet_wrap(~variable, scales = "free") +
-          theme(axis.text.x=element_text(angle=90, vjust=0.5)) +
-          labs(title = plot_titles
-               , subtitle = paste0("Boxplots of response variable (",resp_var,") against character variables")
-               )
+        plot_data <- dat_exp %>%
+          dplyr::mutate({{resp_var}} := factor(!!ensym(resp_var))) %>%
+          dplyr::mutate_if(is.factor,as.character) %>%
+          dplyr::select_if(is.character) %>%
+          dplyr::mutate({{resp_var}} := as.numeric(!!ensym(resp_var))) %>%
+          tidyr::gather(variable,value,2:ncol(.)) %>%
+          dplyr::group_by(variable) %>%
+          dplyr::mutate(levels = n_distinct(value)) %>%
+          dplyr::ungroup() %>%
+          dplyr::filter(levels < max_levels)
+
+        res$y_vs_char <- ggplot2::ggplot(plot_data) +
+          ggplot2::geom_boxplot(ggplot2::aes(x = .data$value
+                                             , y = .data[[resp_var]]
+                                             )
+                                ) +
+          ggplot2::facet_wrap(~ variable
+                              , scales = "free"
+                              ) +
+          ggplot2::theme(axis.text.x=ggplot2::element_text(angle = 90
+                                                  , vjust = 0.5
+                                                  )
+                         ) +
+          ggplot2::labs(title = plot_titles
+                        , subtitle = paste0("Boxplots of response variable ("
+                                            , resp_var
+                                            , ") against character variables"
+                                            )
+                        )
 
       }
 
       # Numeric variables
       if(has_numeric) {
 
+        plot_data <- dat_exp %>%
+          dplyr::select(where(is.numeric)) %>%
+          tidyr::gather(variable,value,1:ncol(.))
+
         # Count numeric
-        res$count_num <- ggplot(dat_exp %>%
-                                  dplyr::select(where(is.numeric)) %>%
-                                  tidyr::gather(variable,value,1:ncol(.))
-                                , aes(value)
-        ) +
-          geom_histogram() +
-          facet_wrap(~variable, scales = "free") +
-          labs(title = plot_titles
-               , subtitle = "Histograms of numeric variables"
-          )
+        res$count_num <- ggplot2::ggplot(data = plot_data
+                                         , ggplot2::aes(.data$value)
+                                         ) +
+          ggplot2::geom_histogram() +
+          ggplot2::facet_wrap(~ variable
+                              , scales = "free"
+                              ) +
+          ggplot2::labs(title = plot_titles
+                        , subtitle = "Histograms of numeric variables"
+                        )
 
         # resp_var vs. Numeric
-        res$y_vs_num <- ggplot(dat_exp %>%
-                                 dplyr::select(any_of(var_exp)) %>%
-                                 dplyr::select(where(is.numeric)) %>%
-                                 tidyr::gather(variable,value,2:ncol(.)) %>%
-                                 dplyr::arrange(!!ensym(resp_var))
-                               , aes(value,!!ensym(resp_var))
-                               ) +
-          geom_point(alpha = 0.5) +
-          geom_smooth() +
-          facet_wrap(~variable, scales = "free") +
-          theme(axis.text.x=element_text(angle=90, vjust=0.5)) +
-          labs(title = plot_titles
-               , subtitle = paste0("Numeric variables plotted against response variable (",resp_var,")")
-               )
+        plot_data <- dat_exp %>%
+          dplyr::select(any_of(var_exp)) %>%
+          dplyr::select(where(is.numeric)) %>%
+          tidyr::gather(variable,value,2:ncol(.)) %>%
+          dplyr::arrange(!!ensym(resp_var))
+
+        res$y_vs_num <- ggplot2::ggplot(data = plot_data
+                                        , ggplot2::aes(x = .data$value
+                                                       , y = .data[[resp_var]]
+                                                       )
+                                        ) +
+          ggplot2::geom_point(alpha = 0.5) +
+          ggplot2::geom_smooth() +
+          ggplot2::facet_wrap(~variable, scales = "free") +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
+                                                             , vjust = 0.5
+                                                             )
+                         ) +
+          ggplot2::labs(title = plot_titles
+                        , subtitle = paste0("Numeric variables plotted against response variable ("
+                                            , resp_var
+                                            , ")"
+                                            )
+                        )
 
       }
 
-      res$pairs <- GGally::ggpairs(dat_exp %>%
-                                     dplyr::mutate(across(where(is.character),factor)) %>%
-                                     dplyr::select(where(~is.numeric(.x)|is.factor(.x) & n_distinct(.x) < 15)) %>%
-                                     dplyr::mutate(across(where(is.factor),factor))
-                                   ) +
-        theme(axis.text.x=element_text(angle=90, vjust=0.5))
+      plot_data <- dat_exp %>%
+        dplyr::mutate(across(where(is.character),factor)) %>%
+        dplyr::select(where(~is.numeric(.x)|is.factor(.x) & n_distinct(.x) < 15)) %>%
+        dplyr::mutate(across(where(is.factor),factor))
+
+      res$pairs <- GGally::ggpairs(plot_data) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
+                                                           , vjust = 0.5
+                                                           )
+                       )
 
 
       #-------residuals-------
@@ -216,48 +247,83 @@
           dplyr::bind_cols(df)
 
 
-        res$resid_plot <- ggplot(res$resid, aes(fitted,residual)) +
-          geom_point(size = 2) +
-          geom_hline(aes(yintercept = 0), linetype = 2, colour = "red") +
-          theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) %>%
-          scale_colour_viridis_d(end=0.9)
+        res$resid_plot <- ggplot2::ggplot(data = res$resid
+                                          , ggplot2::aes(x = fitted
+                                                         , y = residual
+                                                         )
+                                          ) +
+          ggplot2::geom_point(size = 2) +
+          ggplot2::geom_hline(yintercept = 0
+                              , linetype = 2
+                              , colour = "red"
+                              ) +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
+                                                             , vjust = 0.5
+                                                             , hjust = 1
+                                                             )
+                         ) %>%
+          ggplot2::scale_colour_viridis_d(end = 0.9)
 
 
         res$resid_plot_num <- if(has_numeric) {
 
-          ggplot(res$resid %>%
-                   dplyr::select_if(is.numeric) %>%
-                   tidyr::pivot_longer(2:ncol(.))
-                 , aes(value,residual)
-          ) +
-            geom_point(size = 2) +
-            geom_smooth(method = "lm")  +
-            geom_hline(aes(yintercept = 0), linetype = 2, colour = "red") +
-            facet_wrap(~name
-                       , scales = "free_x"
-            ) +
-            theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-            scale_colour_viridis_d()
+          plot_data <- res$resid %>%
+            dplyr::select_if(is.numeric) %>%
+            tidyr::pivot_longer(2:ncol(.))
+
+          ggplot2::ggplot(data = plot_data
+                          , ggplot2::aes(x = value
+                                         , y = residual
+                                         )
+                          ) +
+            ggplot2::geom_point(size = 2) +
+            ggplot2::geom_smooth(method = "lm")  +
+            ggplot2::geom_hline(yintercept = 0
+                                , linetype = 2
+                                , colour = "red"
+                                ) +
+            ggplot2::facet_wrap(~ name
+                                , scales = "free_x"
+                                ) +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
+                                                               , vjust = 0.5
+                                                               , hjust = 1
+                                                               )
+                           ) +
+            ggplot2::scale_colour_viridis_d()
 
         } else NULL
 
 
         res$resid_plot_char <- if(has_character) {
 
-          ggplot(res$resid %>%
-                   dplyr::mutate(across(where(is.factor),as.character)) %>%
-                   dplyr::select(1,where(is.character)) %>%
-                   tidyr::pivot_longer(2:ncol(.)) %>%
-                   dplyr::group_by(name) %>%
-                   dplyr::mutate(levels = n_distinct(value)) %>%
-                   dplyr::ungroup() %>%
-                   dplyr::filter(levels < max_levels)
-                 , aes(value,residual)
-                 ) +
-            geom_boxplot() +
-            geom_hline(aes(yintercept = 0), linetype = 2, colour = "red") +
-            facet_wrap(~name, scales = "free") +
-            theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+          plot_data <- res$resid %>%
+            dplyr::mutate(across(where(is.factor),as.character)) %>%
+            dplyr::select(1,where(is.character)) %>%
+            tidyr::pivot_longer(2:ncol(.)) %>%
+            dplyr::group_by(name) %>%
+            dplyr::mutate(levels = n_distinct(value)) %>%
+            dplyr::ungroup() %>%
+            dplyr::filter(levels < max_levels)
+
+          ggplot2::ggplot(data = plot_data
+                          , ggplot2::aes(x = .data$value
+                                         , y = .data$residual
+                                         )
+                          ) +
+            ggplot2::geom_boxplot() +
+            ggplot2::geom_hline(ggplot2::aes(yintercept = 0)
+                                , linetype = 2
+                                , colour = "red"
+                                ) +
+            ggplot2::facet_wrap(~ name
+                                , scales = "free"
+                                ) +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
+                                                      , vjust = 0.5
+                                                      , hjust = 1
+                                                      )
+                           )
 
         } else NULL
 
@@ -341,7 +407,9 @@
 
       } else {
 
-        paste0(mod_type,".\nDashed red lines indicate years for comparison (see text).")
+        paste0(mod_type
+               , ".\nDashed red lines indicate years for comparison (see text)."
+               )
 
       }
 
@@ -349,114 +417,152 @@
         sub_title
         , if(has_ll) {
 
-          paste0("\nLines are ",draws," draws from posterior distribution.\n",unique(plot_data$length))
+          paste0("\nLines are "
+                 , draws
+                 , " draws from posterior distribution.\n"
+                 , unique(plot_data$length)
+                 )
 
         } else {
 
-          paste0("\nLines are ",draws," draws from posterior distribution.")
+          paste0("\nLines are "
+                 , draws
+                 , " draws from posterior distribution."
+                 )
 
         }
       )
 
-      sub_title_ribbon <- paste0(sub_title,"\nMedian (thick line) and 90% credible intervals (shaded).")
+      sub_title_ribbon <- paste0(sub_title
+                                 , "\nMedian (thick line) and 90% credible intervals (shaded)."
+                                 )
 
       #-------res plot_line-----------
 
-      p <- plot_data %>%
-        ggplot(aes(x = !!ensym(time_var), y = !!ensym(resp_var))) +
-        geom_line(aes(y = pred, group = .draw)
-                  , alpha = 0.5
-                  ) +
-        geom_vline(xintercept = tests$year
-                   , linetype = 2
-                   , colour = "red"
-                   ) +
-        facet_wrap(as.formula(paste0("~ ", geo_var))) +
-        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-        labs(title = plot_titles
-             , subtitle = sub_title_line
-             )
+      p <- ggplot2::ggplot(data = plot_data
+                           , ggplot2::aes(x = .data[[time_var]]
+                                          , y = .data[[resp_var]]
+                                          )
+                           ) +
+        ggplot2::geom_line(ggplot2::aes(y = pred
+                                        , group = .draw
+                                        )
+                           , alpha = 0.5
+                           ) +
+        ggplot2::geom_vline(xintercept = tests$year
+                            , linetype = 2
+                            , colour = "red"
+                            ) +
+        ggplot2::facet_wrap(as.formula(paste0("~ "
+                                              , geo_var
+                                              )
+                                       )
+                            ) +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
+                                                  , vjust = 0.5
+                                                  , hjust = 1
+                                                  )
+                       ) +
+        ggplot2::labs(title = plot_titles
+                      , subtitle = sub_title_line
+                      )
 
-      if(has_ll) p <- p +
-        geom_jitter(data = df
-                    ,aes(year
-                         , !!ensym(resp_var)
-                         , colour = exp(log_list_length)
-                    )
-                    , width = 0.1
-                    , height = 0.05
-        ) +
-        scale_colour_viridis_c() +
-        labs(colour = "List length")
+      if(has_ll) {
 
-      if(!has_ll) p <- p +
-        geom_jitter(data = df
-                    ,aes(year
-                         , !!ensym(resp_var)
-                         , colour = trials
-                    )
-                    , width = 0.1
-                    , height = 0.01
-        ) +
-        scale_colour_viridis_c()
+        p <- p +
+          ggplot2::geom_jitter(data = df
+                               ,ggplot2::aes(x = .data$year
+                                             , y = .data[[resp_var]]
+                                             , colour = exp(.data$log_list_length)
+                                             )
+                               , width = 0.1
+                               , height = 0.05
+                               ) +
+          ggplot2::scale_colour_viridis_c() +
+          ggplot2::labs(colour = "List length")
+
+      }
+
+      if(!has_ll) {
+
+        p <- p +
+          ggplot2::geom_jitter(data = df
+                               , ggplot2::aes(x = .data$year
+                                             , y = .data[[resp_var]]
+                                             , colour = .data$trials
+                                             )
+                               , width = 0.1
+                               , height = 0.01
+                               ) +
+          ggplot2::scale_colour_viridis_c()
+
+      }
 
       res$plot_line <- p
 
 
       #------res plot_ribbon-------
 
-      p <- ggplot() +
-        geom_ribbon(data = res$res
-                    , aes(!!ensym(time_var)
-                          , modMean
-                          , ymin = modci90lo
-                          , ymax = modci90up
-                          )
-                    , alpha = 0.4
+      p <- ggplot2::ggplot() +
+        ggplot2::geom_ribbon(data = res$res
+                             , ggplot2::aes(.data[[time_var]]
+                                            , .data$modMean
+                                            , ymin = .data$modci90lo
+                                            , ymax = .data$modci90up
+                                            )
+                             , alpha = 0.4
                     ) +
-        geom_line(data = res$res
-                  , aes(!!ensym(time_var)
-                        , modMean
-                        )
-                  , linetype = 1
-                  , size = 1.5
-                  ) +
-        geom_vline(xintercept = tests$year
-                   , linetype = 2
-                   , colour = "red"
-                   ) +
-        facet_wrap(as.formula(paste0("~ "
-                                     , geo_var
-                                     )
-                              )
-                   ) +
-        labs(title = plot_titles
-             , subtitle = sub_title_ribbon
-             )
+        ggplot2::geom_line(data = res$res
+                           , ggplot2::aes(x = .data[[time_var]]
+                                          , y = .data$modMean
+                                          )
+                           , linetype = 1
+                           , size = 1.5
+                           ) +
+        ggplot2::geom_vline(xintercept = tests$year
+                            , linetype = 2
+                            , colour = "red"
+                            ) +
+        ggplot2::facet_wrap(as.formula(paste0("~ "
+                                              , geo_var
+                                              )
+                                       )
+                            ) +
+        ggplot2::labs(title = plot_titles
+                      , subtitle = sub_title_ribbon
+                      )
 
-      if(has_ll) p <- p +
-        geom_jitter(data = df
-                    , aes(!!ensym(time_var)
-                          , !!ensym(resp_var)
-                          , colour = exp(log_list_length)
-                          )
+      if(has_ll) {
+
+        p <- p +
+          ggplot2::geom_jitter(data = df
+                    , ggplot2::aes(.data[[time_var]]
+                                   , .data[[resp_var]]
+                                   , colour = exp(.data$log_list_length)
+                                   )
                     , width = 0.1
                     , height = 0.05
                     ) +
-        scale_colour_viridis_c() +
-        labs(colour = "List length")
+        ggplot2::scale_colour_viridis_c() +
+        ggplot2::labs(colour = "List length")
 
-      if(!has_ll) p <- p +
-        geom_jitter(data = df
-                    , aes(!!ensym(time_var)
-                          , !!ensym(resp_var)
-                          , colour = trials
-                          )
-                    , width = 0.1
-                    , height = 0.05
-                    ) +
-        scale_colour_viridis_c() +
-        labs(colour = "Trials")
+      }
+
+      if(!has_ll) {
+
+        p <- p +
+          ggplot2::geom_jitter(data = df
+                               , ggplot2::aes(.data[[time_var]]
+                                              , .data[[resp_var]]
+                                              , colour = .data$trials
+                                              )
+                               , width = 0.1
+                               , height = 0.05
+                               ) +
+          ggplot2::scale_colour_viridis_c() +
+          ggplot2::labs(colour = "Trials")
+
+      }
 
       res$plot_ribbon <- p
 
@@ -533,7 +639,7 @@
 
       #------year difference plot--------
 
-      res$year_diff_plot <- res$year_diff_df %>%
+      plot_data <- res$year_diff_df %>%
         dplyr::group_by(across(any_of(geo_var))) %>%
         dplyr::mutate(lower = sum(diff < 0) / n()) %>%
         dplyr::ungroup() %>%
@@ -549,35 +655,37 @@
         dplyr::mutate(likelihood = forcats::fct_expand(likelihood
                                                        ,levels(lulikelihood$likelihood)
                                                        )
-                      ) %>%
-        ggplot(aes(diff
-                   , !!ensym(geo_var)
-                   , fill = likelihood
-                   )
-               ) +
+                      )
+
+      res$year_diff_plot <- ggplot2::ggplot(data = plot_data
+                                            , ggplot2::aes(.data$diff
+                                                           , .data[[geo_var]]
+                                                           , fill = .data$likelihood
+                                                           )
+                                            ) +
         ggridges::geom_density_ridges() +
-        geom_vline(aes(xintercept = 0)
+        geom_vline(xintercept = 0
                    , linetype = 2
                    , colour = "red"
                    ) +
-        scale_fill_viridis_d(drop = FALSE) +
-        labs(title = plot_titles
-             , subtitle = paste0("Difference in "
-                                  , recent
-                                  , " "
-                                  , tolower(mod_type)
-                                  , " compared to "
-                                  , reference
-                                  )
-             , x = "Difference"
-             , y = "IBRA Subregion"
-             , fill = "Likelihood of decrease"
-             , caption = paste0("Red dotted line indicates no change between "
-                                , reference
-                                , " and "
-                                , recent
-                                )
-             )
+        ggplot2::scale_fill_viridis_d(drop = FALSE) +
+        ggplot2::labs(title = plot_titles
+                      , subtitle = paste0("Difference in "
+                                          , recent
+                                          , " "
+                                          , tolower(mod_type)
+                                          , " compared to "
+                                          , reference
+                                          )
+                      , x = "Difference"
+                      , y = "IBRA Subregion"
+                      , fill = "Likelihood of decrease"
+                      , caption = paste0("Red dotted line indicates no change between "
+                                         , reference
+                                         , " and "
+                                         , recent
+                                         )
+                      )
 
       rio::export(res
                   , out_file
