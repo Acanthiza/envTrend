@@ -44,7 +44,8 @@
                           , time_var = "year"
                           , max_levels = 30
                           , draws = 200
-                          , tests = NULL
+                          , reference_year = 2000
+                          , recent_year = 2010
                           , re_run = FALSE
                           , quant_probs = c(0.05, 0.5, 0.95)
                           ) {
@@ -65,15 +66,11 @@
 
     if(do_run) {
 
-      if(isTRUE(is.null(tests))) {
-
-        tests <- tibble::tribble(~type, ~year
-                                 , "reference", 2000
-                                 , "recent", 2015
-                                 ) %>%
-          tidyr::unnest(cols = c(year))
-
-      }
+      tests <- tibble::tribble(~type, ~year
+                               , "reference", reference_year
+                               , "recent", recent_year
+                               ) %>%
+        tidyr::unnest(cols = c(year))
 
       reference <- tests$year[tests$type == "reference"]
 
@@ -281,27 +278,22 @@
                       , success = if(is_binomial_mod) 0 else NULL
                       , trials = if(is_binomial_mod) 100 else NULL
                       ) %>%
-        dplyr::left_join(as_tibble(posterior_predict(mod
-                                                     , newdata = .
-                                                     , re.form = NA#insight::find_formula(mod)$random
-                                                     , type = "response"
-                                                     )
+        tidybayes::add_epred_draws(mod
+                                   , ndraws = draws
+                                   , re_formula = NA
+                                   , value = "pred"
                                    ) %>%
-                           tibble::rownames_to_column(var = "row") %>%
-                           tidyr::gather(col,value,2:ncol(.))
-                         ) %>%
-        dplyr::mutate(rawValue = as.numeric(value)
-                      , value = if(is_binomial_mod) rawValue/trials else rawValue
-                      )
+        dplyr::ungroup()
+
 
       res$res <- res$pred %>%
         dplyr::group_by(across(any_of(context))) %>%
         dplyr::summarise(n = n()
                          , nCheck = nrow(as_tibble(mod))
-                         , modMean = mean(value)
-                         , modMedian = quantile(value, 0.5)
-                         , modci90lo = quantile(value, 0.05)
-                         , modci90up = quantile(value, 0.95)
+                         , modMean = mean(pred)
+                         , modMedian = quantile(pred, 0.5)
+                         , modci90lo = quantile(pred, 0.05)
+                         , modci90up = quantile(pred, 0.95)
                          , text = paste0(round(modMedian,2)
                                          , " ("
                                          , round(modci90lo,2)
@@ -337,10 +329,11 @@
                              }
                          , by = character()
                          ) %>%
-        tidybayes::add_fitted_draws(mod
-                                    , n = draws
-                                    , re_formula = NA
-                                    )
+        tidybayes::add_epred_draws(mod
+                                   , ndraws = draws
+                                   , re_formula = NA
+                                   , value = "pred"
+                                   )
 
       sub_title <-  if(has_ll) {
 
@@ -371,7 +364,7 @@
 
       p <- plot_data %>%
         ggplot(aes(x = !!ensym(time_var), y = !!ensym(resp_var))) +
-        geom_line(aes(y = .value, group = .draw)
+        geom_line(aes(y = pred, group = .draw)
                   , alpha = 0.5
                   ) +
         geom_vline(xintercept = tests$year
@@ -477,7 +470,6 @@
                          ) %>%
         dplyr::mutate(list_length = if(has_ll) median(exp(df$log_list_length)) else NULL
                       , log_list_length = if(has_ll) log(list_length) else NULL
-                      , col = row.names(.)
                       , success = 0
                       , trials = 100
                       , nCheck = nrow(as_tibble(mod))
@@ -485,34 +477,33 @@
                       , taxa = taxa
                       , common = common
                       ) %>%
-        dplyr::left_join(as_tibble(posterior_predict(mod
-                                                     , newdata = .
-                                                     , re.form = NA#insight::find_formula(mod)$random
-                                                     )
+        tidybayes::add_epred_draws(mod
+                                   , ndraws = draws
+                                   , re_formula = NA
+                                   , value = "pred"
                                    ) %>%
-                           tibble::rownames_to_column(var = "row") %>%
-                           tidyr::gather(col
-                                         , value
-                                         , 2:ncol(.)
-                                         )
-                         ) %>%
-        dplyr::select(-c(col)) %>%
-        dplyr::mutate(value = as.numeric(if(is_binomial_mod) value/trials else value)) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(any_of(context)
+                      , type
+                      , pred
+                      , .draw
+                      ) %>%
         tidyr::pivot_wider(names_from = "type"
-                           , values_from = c(any_of(time_var),"value")
+                           , values_from = c(time_var
+                                             , "pred"
+                                             )
                            ) %>%
-        setNames(gsub("\\d{4}","",names(.))) %>%
-        dplyr::mutate(diff = as.numeric(value_recent-value_reference))
+        #setNames(gsub("\\d{4}", "", names(.))) %>%
+        dplyr::mutate(diff = as.numeric(pred_recent - pred_reference))
 
 
       #-------year difference res---------
 
       res$year_diff_res <- res$year_diff_df %>%
         dplyr::group_by(across(any_of(context))) %>%
-        dplyr::summarise(n = n()
-                         , nCheck = unique(nCheck)
-                         , lower = sum(diff < 0)/nCheck
-                         , higher = sum(diff > 0)/nCheck
+        dplyr::summarise(nCheck = n()
+                         , lower = sum(diff < 0) / nCheck
+                         , higher = sum(diff > 0) / nCheck
                          , meanDiff = mean(diff)
                          , medianDiff = median(diff)
                          , cilo = quantile(diff, probs = 0.05)
@@ -544,7 +535,7 @@
 
       res$year_diff_plot <- res$year_diff_df %>%
         dplyr::group_by(across(any_of(geo_var))) %>%
-        dplyr::mutate(lower = sum(diff < 0) / nCheck) %>%
+        dplyr::mutate(lower = sum(diff < 0) / n()) %>%
         dplyr::ungroup() %>%
         dplyr::mutate(likelihood = map(lower
                                        , ~cut(.

@@ -16,7 +16,8 @@ explore_mod(
   time_var = "year",
   max_levels = 30,
   draws = 200,
-  tests = NULL,
+  reference_year = 2000,
+  recent_year = 2010,
   re_run = FALSE,
   quant_probs = c(0.05, 0.5, 0.95)
 )
@@ -44,14 +45,14 @@ explore_mod(
 
 \item{draws}{Number of draws from posterior distribution to display in plots.}
 
-\item{tests}{Years at which to predict (and compare change) as dataframe
-with type = c("reference", "recent") and year = four-digit year corresponding
-to references and recent.}
-
 \item{re_run}{Logical. If file \code{out_file} already exists, should it be
 re-run?}
 
 \item{quant_probs}{Quantiles for summarising.}
+
+\item{tests}{Years at which to predict (and compare change) as dataframe
+with type = c("reference", "recent") and year = four-digit year corresponding
+to references and recent.}
 }
 \value{
 A list with components

@@ -129,7 +129,8 @@
   time_var <span class='op'>=</span> <span class='st'>"year"</span>,
   max_levels <span class='op'>=</span> <span class='fl'>30</span>,
   draws <span class='op'>=</span> <span class='fl'>200</span>,
-  tests <span class='op'>=</span> <span class='cn'>NULL</span>,
+  reference_year <span class='op'>=</span> <span class='fl'>2000</span>,
+  recent_year <span class='op'>=</span> <span class='fl'>2010</span>,
   re_run <span class='op'>=</span> <span class='cn'>FALSE</span>,
   quant_probs <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.05</span>, <span class='fl'>0.5</span>, <span class='fl'>0.95</span><span class='op'>)</span>
 <span class='op'>)</span></pre>
@@ -182,12 +183,6 @@
       <td><p>Number of draws from posterior distribution to display in plots.</p></td>
     </tr>
     <tr>
-      <th>tests</th>
-      <td><p>Years at which to predict (and compare change) as dataframe
-with type = c("reference", "recent") and year = four-digit year corresponding
-to references and recent.</p></td>
-    </tr>
-    <tr>
       <th>re_run</th>
       <td><p>Logical. If file <code>out_file</code> already exists, should it be
 re-run?</p></td>
@@ -195,6 +190,12 @@ re-run?</p></td>
     <tr>
       <th>quant_probs</th>
       <td><p>Quantiles for summarising.</p></td>
+    </tr>
+    <tr>
+      <th>tests</th>
+      <td><p>Years at which to predict (and compare change) as dataframe
+with type = c("reference", "recent") and year = four-digit year corresponding
+to references and recent.</p></td>
     </tr>
     </table>
 
