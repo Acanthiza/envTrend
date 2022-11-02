@@ -15,5 +15,6 @@
 #'   \item{exceptional}{Factor with `r levels(lulikelihood$exceptional)` levels}
 #'   ...
 #' }
+#' @source <https://www.ipcc.ch/site/assets/uploads/2017/08/AR5_Uncertainty_Guidance_Note.pdf>
 "lulikelihood"
 
