@@ -2,7 +2,7 @@
 % Please edit documentation in R/explore_mod.R
 \name{explore_mod}
 \alias{explore_mod}
-\title{Explore (pre- and most-) model results.}
+\title{Explore (pre- and post-) model results.}
 \usage{
 explore_mod(
   taxa,
@@ -67,5 +67,5 @@ A list with components
 }
 }
 \description{
-Explore (pre- and most-) model results.
+Explore (pre- and post-) model results.
 }

@@ -1,5 +1,5 @@
 
-#' Explore (pre- and most-) model results.
+#' Explore (pre- and post-) model results.
 #'
 #'
 #' @param taxa Scientific name of taxa (for labelling things).
@@ -51,6 +51,8 @@
 
     `:=` <- rlang::`:=`
 
+    where <- tidyselect:::where
+
     taxa <- as.character(taxa)
     common <- as.character(common)
 
@@ -93,7 +95,7 @@
 
       if(!resp_var %in% names(df)) df <- df %>%
         dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
-        dplyr::summarise({{ resp_var }} := sum(.data$success) / dplyr::n()) %>%
+        dplyr::summarise({{ resp_var }} := sum(.data$success) / n()) %>%
         dplyr::ungroup()
 
 
@@ -108,14 +110,14 @@
 
       has_numeric <- dat_exp %>%
         dplyr::select(-1) %>%
-        dplyr::select(tidyselect::where(is.numeric)) %>%
+        dplyr::select(where(is.numeric)) %>%
         ncol() %>%
         `>` (0)
 
       has_character <- dat_exp %>%
         dplyr::select(-1) %>%
-        dplyr::mutate(dplyr::across(tidyselect::where(is.factor),as.character)) %>%
-        dplyr::select(tidyselect::where(is.character)) %>%
+        dplyr::mutate(dplyr::across(where(is.factor),as.character)) %>%
+        dplyr::select(where(is.character)) %>%
         ncol() %>%
         `>` (0)
 
@@ -123,7 +125,7 @@
       if(has_character) {
 
         plot_data <- dat_exp %>%
-          dplyr::mutate(dplyr::across(tidyselect::where(is.factor),as.character)) %>%
+          dplyr::mutate(dplyr::across(where(is.factor),as.character)) %>%
           dplyr::select_if(is.character) %>%
           tidyr::gather(.data$variable
                         , .data$value
@@ -191,7 +193,7 @@
       if(has_numeric) {
 
         plot_data <- dat_exp %>%
-          dplyr::select(tidyselect::where(is.numeric)) %>%
+          dplyr::select(where(is.numeric)) %>%
           tidyr::gather(.data$variable,.data$value,1:ncol(.))
 
         # Count numeric
@@ -209,7 +211,7 @@
         # resp_var vs. Numeric
         plot_data <- dat_exp %>%
           dplyr::select(tidyselect::any_of(var_exp)) %>%
-          dplyr::select(tidyselect::where(is.numeric)) %>%
+          dplyr::select(where(is.numeric)) %>%
           tidyr::gather(.data$variable,.data$value,2:ncol(.)) %>%
           dplyr::arrange({{ resp_var }})
 
@@ -235,9 +237,9 @@
       }
 
       plot_data <- dat_exp %>%
-        dplyr::mutate(dplyr::across(tidyselect::where(is.character),factor)) %>%
-        dplyr::select(tidyselect::where(~is.numeric(.x)|is.factor(.x) & dplyr::n_distinct(.x) < 15)) %>%
-        dplyr::mutate(dplyr::across(tidyselect::where(is.factor),factor))
+        dplyr::mutate(dplyr::across(where(is.character),factor)) %>%
+        dplyr::select(where(~is.numeric(.x)|is.factor(.x) & dplyr::n_distinct(.x) < 15)) %>%
+        dplyr::mutate(dplyr::across(where(is.factor),factor))
 
       res$pairs <- GGally::ggpairs(plot_data) +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
@@ -307,9 +309,9 @@
         res$resid_plot_char <- if(has_character) {
 
           plot_data <- res$resid %>%
-            dplyr::mutate(dplyr::across(tidyselect::where(is.factor),as.character)) %>%
+            dplyr::mutate(dplyr::across(where(is.factor),as.character)) %>%
             dplyr::select(1
-                          , tidyselect::where(is.character)
+                          , where(is.character)
                           ) %>%
             tidyr::pivot_longer(2:ncol(.)) %>%
             dplyr::group_by(.data$name) %>%
@@ -365,7 +367,7 @@
 
       res$res <- res$pred %>%
         dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
-        dplyr::summarise(n = dplyr::n()
+        dplyr::summarise(n = n()
                          , nCheck = nrow(as_tibble(mod))
                          , modMean = mean(.data$pred)
                          , modMedian = stats::quantile(.data$pred, 0.5)
@@ -618,7 +620,7 @@
 
       res$year_diff_res <- res$year_diff_df %>%
         dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
-        dplyr::summarise(nCheck = dplyr::n()
+        dplyr::summarise(nCheck = n()
                          , lower = sum(diff < 0) / nCheck
                          , higher = sum(diff > 0) / nCheck
                          , meanDiff = mean(diff)
@@ -652,7 +654,7 @@
 
       plot_data <- res$year_diff_df %>%
         dplyr::group_by(dplyr::across(tidyselect::any_of(geo_var))) %>%
-        dplyr::mutate(lower = sum(diff < 0) / dplyr::n()) %>%
+        dplyr::mutate(lower = sum(diff < 0) / n()) %>%
         dplyr::ungroup() %>%
         dplyr::mutate(likelihood = purr::map(lower
                                        , ~cut(.
