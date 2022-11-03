@@ -627,8 +627,8 @@
         dplyr::ungroup() %>%
         dplyr::mutate(likelihood = purrr::map(lower
                                        , ~cut(.
-                                              , breaks = c(0, lulikelihood$maxVal)
-                                              , labels = lulikelihood$likelihood
+                                              , breaks = c(0, envTrend::lulikelihood$maxVal)
+                                              , labels = envTrend::lulikelihood$likelihood
                                               , include.lowest = TRUE
                                               )
                                        )
@@ -652,15 +652,15 @@
         dplyr::ungroup() %>%
         dplyr::mutate(likelihood = purrr::map(lower
                                        , ~cut(.
-                                              , breaks = c(0,lulikelihood$maxVal)
-                                              , labels = lulikelihood$likelihood
+                                              , breaks = c(0,envTrend::lulikelihood$maxVal)
+                                              , labels = envTrend::lulikelihood$likelihood
                                               , include.lowest = TRUE
                                               )
                                        )
                       ) %>%
         tidyr::unnest(cols = c(likelihood)) %>%
         dplyr::mutate(likelihood = forcats::fct_expand(likelihood
-                                                       ,levels(lulikelihood$likelihood)
+                                                       ,levels(envTrend::lulikelihood$likelihood)
                                                        )
                       )
 
