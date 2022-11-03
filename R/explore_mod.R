@@ -125,12 +125,9 @@
       if(has_character) {
 
         plot_data <- dat_exp %>%
-          dplyr::mutate(dplyr::across(where(is.factor),as.character)) %>%
+          dplyr::mutate(dplyr::across(where(is.factor), as.character)) %>%
           dplyr::select_if(is.character) %>%
-          tidyr::gather(.data$variable
-                        , .data$value
-                        , 1:ncol(.)
-                        ) %>%
+          tidyr::gather(variable, value, 1:ncol(.)) %>%
           dplyr::group_by(.data$variable) %>%
           dplyr::mutate(levels = dplyr::n_distinct(.data$value)) %>%
           dplyr::ungroup() %>%
@@ -155,14 +152,11 @@
 
         # resp_var vs character
         plot_data <- dat_exp %>%
-          dplyr::mutate({{resp_var}} := factor({{ resp_var }})) %>%
+          dplyr::mutate({{ resp_var }} := as.factor(.data[[resp_var]])) %>%
           dplyr::mutate_if(is.factor,as.character) %>%
           dplyr::select_if(is.character) %>%
-          dplyr::mutate({{resp_var}} := as.numeric({{ resp_var }})) %>%
-          tidyr::gather(.data$variable
-                        , .data$value
-                        , 2:ncol(.)
-                        ) %>%
+          dplyr::mutate({{resp_var}} := as.numeric(.data[[resp_var]])) %>%
+          tidyr::gather(variable, value, 2:ncol(.)) %>%
           dplyr::group_by(.data$variable) %>%
           dplyr::mutate(levels = dplyr::n_distinct(.data$value)) %>%
           dplyr::ungroup() %>%
@@ -194,7 +188,7 @@
 
         plot_data <- dat_exp %>%
           dplyr::select(where(is.numeric)) %>%
-          tidyr::gather(.data$variable,.data$value,1:ncol(.))
+          tidyr::gather(variable, value, 1:ncol(.))
 
         # Count numeric
         res$count_num <- ggplot2::ggplot(data = plot_data
@@ -212,7 +206,7 @@
         plot_data <- dat_exp %>%
           dplyr::select(tidyselect::any_of(var_exp)) %>%
           dplyr::select(where(is.numeric)) %>%
-          tidyr::gather(.data$variable,.data$value,2:ncol(.)) %>%
+          tidyr::gather(variable, value, 2:ncol(.)) %>%
           dplyr::arrange({{ resp_var }})
 
         res$y_vs_num <- ggplot2::ggplot(data = plot_data
@@ -252,9 +246,9 @@
 
       if(length(residuals(mod)) == nrow(df)) {
 
-        res$resid <- tibble(residual = residuals(mod)
-                            , fitted = fitted(mod)
-                            ) %>%
+        res$resid <- tibble::tibble(residual = residuals(mod)
+                                    , fitted = fitted(mod)
+                                    ) %>%
           dplyr::bind_cols(df)
 
 
@@ -367,8 +361,8 @@
 
       res$res <- res$pred %>%
         dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
-        dplyr::summarise(n = n()
-                         , nCheck = nrow(as_tibble(mod))
+        dplyr::summarise(n = dplyr::n()
+                         , nCheck = nrow(tibble::as_tibble(mod))
                          , modMean = mean(.data$pred)
                          , modMedian = stats::quantile(.data$pred, 0.5)
                          , modci90lo = stats::quantile(.data$pred, 0.05)
@@ -391,9 +385,9 @@
         dplyr::mutate(success = 0
                       , trials = 100
                       ) %>%
-        dplyr::full_join(tibble(probs = 0.5) %>%
+        dplyr::full_join(tibble::tibble(probs = 0.5) %>%
                            {if(has_ll) (.) %>%
-                               dplyr::mutate(list_length = purr::map_dbl(probs
+                               dplyr::mutate(list_length = purrr::map_dbl(probs
                                                                    , function(x) stats::quantile(unique(exp(df$log_list_length))
                                                                                                  , probs = x
                                                                                                  )
@@ -591,7 +585,7 @@
                       , log_list_length = if(has_ll) log(list_length) else NULL
                       , success = 0
                       , trials = 100
-                      , nCheck = nrow(as_tibble(mod))
+                      , nCheck = nrow(tibble::as_tibble(mod))
                       , mod_type = mod_type
                       , taxa = taxa
                       , common = common
@@ -608,7 +602,7 @@
                       , .data$.draw
                       ) %>%
         tidyr::pivot_wider(names_from = "type"
-                           , values_from = c(time_var
+                           , values_from = c(tidyselect::any_of(time_var)
                                              , "pred"
                                              )
                            ) %>%
@@ -620,18 +614,18 @@
 
       res$year_diff_res <- res$year_diff_df %>%
         dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
-        dplyr::summarise(nCheck = n()
+        dplyr::summarise(nCheck = dplyr::n()
                          , lower = sum(diff < 0) / nCheck
                          , higher = sum(diff > 0) / nCheck
                          , meanDiff = mean(diff)
                          , medianDiff = median(diff)
                          , cilo = stats::quantile(diff, probs = 0.05)
                          , ciup = stats::quantile(diff, probs = 0.95)
-                         , reference = unique({{ year_reference }})
-                         , recent = unique({{ year_recent }})
+                         , reference = unique({{ reference_year }})
+                         , recent = unique({{ recent_year }})
                          ) %>%
         dplyr::ungroup() %>%
-        dplyr::mutate(likelihood = purr::map(lower
+        dplyr::mutate(likelihood = purrr::map(lower
                                        , ~cut(.
                                               , breaks = c(0, lulikelihood$maxVal)
                                               , labels = lulikelihood$likelihood
@@ -654,9 +648,9 @@
 
       plot_data <- res$year_diff_df %>%
         dplyr::group_by(dplyr::across(tidyselect::any_of(geo_var))) %>%
-        dplyr::mutate(lower = sum(diff < 0) / n()) %>%
+        dplyr::mutate(lower = sum(diff < 0) / dplyr::n()) %>%
         dplyr::ungroup() %>%
-        dplyr::mutate(likelihood = purr::map(lower
+        dplyr::mutate(likelihood = purrr::map(lower
                                        , ~cut(.
                                               , breaks = c(0,lulikelihood$maxVal)
                                               , labels = lulikelihood$likelihood

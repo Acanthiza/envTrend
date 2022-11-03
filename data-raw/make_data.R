@@ -4,7 +4,10 @@
   make_new_flor <- FALSE
 
   codes <- grep("make_data"
-                , list.files(path = "data-raw",pattern = "\\.R$", full.names = TRUE)
+                , list.files(path = "data-raw"
+                             , pattern = "\\.R$"
+                             , full.names = TRUE
+                             )
                 , value = TRUE
                 , invert = TRUE
                 )

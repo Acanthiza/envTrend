@@ -18,3 +18,8 @@
 #' @source <https://www.ipcc.ch/site/assets/uploads/2017/08/AR5_Uncertainty_Guidance_Note.pdf>
 "lulikelihood"
 
+#' Stanreg model for _Acacia paradoxa_
+#'
+#' @format object of class `r class(ap)`
+#'
+"ap"
