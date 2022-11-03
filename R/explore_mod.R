@@ -13,9 +13,8 @@
 #' @param time_var Continuous time variable (usually `year`)
 #' @param max_levels Maximum number of classes to include in categorical plots.
 #' @param draws Number of draws from posterior distribution to display in plots.
-#' @param tests Years at which to predict (and compare change) as dataframe
-#' with type = c("reference", "recent") and year = four-digit year corresponding
-#' to references and recent.
+#' @param reference_year Reference time at which to predict (and compare change)
+#' @param recent_year Time at which to predict to compare against reference_year
 #' @param re_run Logical. If file `out_file` already exists, should it be
 #' re-run?
 #' @param quant_probs Quantiles for summarising.
@@ -50,6 +49,8 @@
                           , quant_probs = c(0.05, 0.5, 0.95)
                           ) {
 
+    `:=` <- rlang::`:=`
+
     taxa <- as.character(taxa)
     common <- as.character(common)
 
@@ -70,7 +71,7 @@
                                , "reference", reference_year
                                , "recent", recent_year
                                ) %>%
-        tidyr::unnest(cols = c(year))
+        tidyr::unnest(cols = c(.data$year))
 
       reference <- tests$year[tests$type == "reference"]
 
@@ -86,11 +87,13 @@
 
       plot_titles <- bquote(~italic(.(taxa))*":" ~ .(common))
 
-      has_ll <- sum(grepl("list_length",names(mod$coefficients))) > 0
+      has_ll <- sum(grepl("list_length"
+                          , names(mod$coefficients))
+                    ) > 0
 
       if(!resp_var %in% names(df)) df <- df %>%
-        dplyr::group_by(across(any_of(context))) %>%
-        dplyr::summarise(!!ensym(resp_var) := sum(success)/n()) %>%
+        dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
+        dplyr::summarise({{ resp_var }} := sum(.data$success) / dplyr::n()) %>%
         dplyr::ungroup()
 
 
@@ -101,18 +104,18 @@
         unique()
 
       dat_exp <- df %>%
-        dplyr::select(all_of(var_exp))
+        dplyr::select(tidyselect::any_of(var_exp))
 
       has_numeric <- dat_exp %>%
         dplyr::select(-1) %>%
-        dplyr::select(where(is.numeric)) %>%
+        dplyr::select(tidyselect::where(is.numeric)) %>%
         ncol() %>%
         `>` (0)
 
       has_character <- dat_exp %>%
         dplyr::select(-1) %>%
-        dplyr::mutate(across(where(is.factor),as.character)) %>%
-        dplyr::select(where(is.character)) %>%
+        dplyr::mutate(dplyr::across(tidyselect::where(is.factor),as.character)) %>%
+        dplyr::select(tidyselect::where(is.character)) %>%
         ncol() %>%
         `>` (0)
 
@@ -120,11 +123,14 @@
       if(has_character) {
 
         plot_data <- dat_exp %>%
-          dplyr::mutate(across(where(is.factor),as.character)) %>%
+          dplyr::mutate(dplyr::across(tidyselect::where(is.factor),as.character)) %>%
           dplyr::select_if(is.character) %>%
-          tidyr::gather(variable,value,1:ncol(.)) %>%
-          dplyr::group_by(variable) %>%
-          dplyr::mutate(levels = n_distinct(value)) %>%
+          tidyr::gather(.data$variable
+                        , .data$value
+                        , 1:ncol(.)
+                        ) %>%
+          dplyr::group_by(.data$variable) %>%
+          dplyr::mutate(levels = dplyr::n_distinct(.data$value)) %>%
           dplyr::ungroup() %>%
           dplyr::filter(levels < max_levels)
 
@@ -147,13 +153,16 @@
 
         # resp_var vs character
         plot_data <- dat_exp %>%
-          dplyr::mutate({{resp_var}} := factor(!!ensym(resp_var))) %>%
+          dplyr::mutate({{resp_var}} := factor({{ resp_var }})) %>%
           dplyr::mutate_if(is.factor,as.character) %>%
           dplyr::select_if(is.character) %>%
-          dplyr::mutate({{resp_var}} := as.numeric(!!ensym(resp_var))) %>%
-          tidyr::gather(variable,value,2:ncol(.)) %>%
-          dplyr::group_by(variable) %>%
-          dplyr::mutate(levels = n_distinct(value)) %>%
+          dplyr::mutate({{resp_var}} := as.numeric({{ resp_var }})) %>%
+          tidyr::gather(.data$variable
+                        , .data$value
+                        , 2:ncol(.)
+                        ) %>%
+          dplyr::group_by(.data$variable) %>%
+          dplyr::mutate(levels = dplyr::n_distinct(.data$value)) %>%
           dplyr::ungroup() %>%
           dplyr::filter(levels < max_levels)
 
@@ -162,7 +171,7 @@
                                              , y = .data[[resp_var]]
                                              )
                                 ) +
-          ggplot2::facet_wrap(~ variable
+          ggplot2::facet_wrap(~ .data$variable
                               , scales = "free"
                               ) +
           ggplot2::theme(axis.text.x=ggplot2::element_text(angle = 90
@@ -182,15 +191,15 @@
       if(has_numeric) {
 
         plot_data <- dat_exp %>%
-          dplyr::select(where(is.numeric)) %>%
-          tidyr::gather(variable,value,1:ncol(.))
+          dplyr::select(tidyselect::where(is.numeric)) %>%
+          tidyr::gather(.data$variable,.data$value,1:ncol(.))
 
         # Count numeric
         res$count_num <- ggplot2::ggplot(data = plot_data
                                          , ggplot2::aes(.data$value)
                                          ) +
           ggplot2::geom_histogram() +
-          ggplot2::facet_wrap(~ variable
+          ggplot2::facet_wrap(~ .data$variable
                               , scales = "free"
                               ) +
           ggplot2::labs(title = plot_titles
@@ -199,10 +208,10 @@
 
         # resp_var vs. Numeric
         plot_data <- dat_exp %>%
-          dplyr::select(any_of(var_exp)) %>%
-          dplyr::select(where(is.numeric)) %>%
-          tidyr::gather(variable,value,2:ncol(.)) %>%
-          dplyr::arrange(!!ensym(resp_var))
+          dplyr::select(tidyselect::any_of(var_exp)) %>%
+          dplyr::select(tidyselect::where(is.numeric)) %>%
+          tidyr::gather(.data$variable,.data$value,2:ncol(.)) %>%
+          dplyr::arrange({{ resp_var }})
 
         res$y_vs_num <- ggplot2::ggplot(data = plot_data
                                         , ggplot2::aes(x = .data$value
@@ -211,7 +220,7 @@
                                         ) +
           ggplot2::geom_point(alpha = 0.5) +
           ggplot2::geom_smooth() +
-          ggplot2::facet_wrap(~variable, scales = "free") +
+          ggplot2::facet_wrap(~.data$variable, scales = "free") +
           ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
                                                              , vjust = 0.5
                                                              )
@@ -226,9 +235,9 @@
       }
 
       plot_data <- dat_exp %>%
-        dplyr::mutate(across(where(is.character),factor)) %>%
-        dplyr::select(where(~is.numeric(.x)|is.factor(.x) & n_distinct(.x) < 15)) %>%
-        dplyr::mutate(across(where(is.factor),factor))
+        dplyr::mutate(dplyr::across(tidyselect::where(is.character),factor)) %>%
+        dplyr::select(tidyselect::where(~is.numeric(.x)|is.factor(.x) & dplyr::n_distinct(.x) < 15)) %>%
+        dplyr::mutate(dplyr::across(tidyselect::where(is.factor),factor))
 
       res$pairs <- GGally::ggpairs(plot_data) +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
@@ -248,8 +257,8 @@
 
 
         res$resid_plot <- ggplot2::ggplot(data = res$resid
-                                          , ggplot2::aes(x = fitted
-                                                         , y = residual
+                                          , ggplot2::aes(x = .data$fitted
+                                                         , y = .data$residual
                                                          )
                                           ) +
           ggplot2::geom_point(size = 2) +
@@ -272,8 +281,8 @@
             tidyr::pivot_longer(2:ncol(.))
 
           ggplot2::ggplot(data = plot_data
-                          , ggplot2::aes(x = value
-                                         , y = residual
+                          , ggplot2::aes(x = .data$value
+                                         , y = .data$residual
                                          )
                           ) +
             ggplot2::geom_point(size = 2) +
@@ -282,7 +291,7 @@
                                 , linetype = 2
                                 , colour = "red"
                                 ) +
-            ggplot2::facet_wrap(~ name
+            ggplot2::facet_wrap(~ .data$name
                                 , scales = "free_x"
                                 ) +
             ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
@@ -298,11 +307,13 @@
         res$resid_plot_char <- if(has_character) {
 
           plot_data <- res$resid %>%
-            dplyr::mutate(across(where(is.factor),as.character)) %>%
-            dplyr::select(1,where(is.character)) %>%
+            dplyr::mutate(dplyr::across(tidyselect::where(is.factor),as.character)) %>%
+            dplyr::select(1
+                          , tidyselect::where(is.character)
+                          ) %>%
             tidyr::pivot_longer(2:ncol(.)) %>%
-            dplyr::group_by(name) %>%
-            dplyr::mutate(levels = n_distinct(value)) %>%
+            dplyr::group_by(.data$name) %>%
+            dplyr::mutate(levels = dplyr::n_distinct(.data$value)) %>%
             dplyr::ungroup() %>%
             dplyr::filter(levels < max_levels)
 
@@ -316,7 +327,7 @@
                                 , linetype = 2
                                 , colour = "red"
                                 ) +
-            ggplot2::facet_wrap(~ name
+            ggplot2::facet_wrap(~ .data$name
                                 , scales = "free"
                                 ) +
             ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
@@ -332,13 +343,13 @@
 
       #---------post explore-------
 
-      if(family(mod)$family == "beta") class(mod) <- unique(c(class(mod),"betareg"))
+      if(stats::family(mod)$family == "beta") class(mod) <- unique(c(class(mod),"betareg"))
 
-      is_binomial_mod <- family(mod)$family == "binomial"
+      is_binomial_mod <- stats::family(mod)$family == "binomial"
 
       res$pred <- df %>%
-        dplyr::distinct(across(any_of(context))) %>%
-        dplyr::mutate(list_length = if(has_ll) median(exp(df$log_list_length)) else NULL
+        dplyr::distinct(dplyr::across(tidyselect::any_of(context))) %>%
+        dplyr::mutate(list_length = if(has_ll) stats::median(exp(df$log_list_length)) else NULL
                       , log_list_length = if(has_ll) log(list_length) else NULL
                       , col = row.names(.)
                       , success = if(is_binomial_mod) 0 else NULL
@@ -353,18 +364,18 @@
 
 
       res$res <- res$pred %>%
-        dplyr::group_by(across(any_of(context))) %>%
-        dplyr::summarise(n = n()
+        dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
+        dplyr::summarise(n = dplyr::n()
                          , nCheck = nrow(as_tibble(mod))
-                         , modMean = mean(pred)
-                         , modMedian = quantile(pred, 0.5)
-                         , modci90lo = quantile(pred, 0.05)
-                         , modci90up = quantile(pred, 0.95)
-                         , text = paste0(round(modMedian,2)
+                         , modMean = mean(.data$pred)
+                         , modMedian = stats::quantile(.data$pred, 0.5)
+                         , modci90lo = stats::quantile(.data$pred, 0.05)
+                         , modci90up = stats::quantile(.data$pred, 0.95)
+                         , text = paste0(round(.data$modMedian,2)
                                          , " ("
-                                         , round(modci90lo,2)
+                                         , round(.data$modci90lo,2)
                                          , " to "
-                                         , round(modci90up,2)
+                                         , round(.data$modci90up,2)
                                          , ")"
                                          )
                          ) %>%
@@ -374,16 +385,16 @@
       #------res plot data-------
 
       plot_data <- df %>%
-        dplyr::distinct(across(any_of(context))) %>%
+        dplyr::distinct(dplyr::across(tidyselect::any_of(context))) %>%
         dplyr::mutate(success = 0
                       , trials = 100
                       ) %>%
         dplyr::full_join(tibble(probs = 0.5) %>%
                            {if(has_ll) (.) %>%
-                               dplyr::mutate(list_length = map_dbl(probs
-                                                                   , ~quantile(unique(exp(df$log_list_length))
-                                                                              , probs = .
-                                                                              )
+                               dplyr::mutate(list_length = purr::map_dbl(probs
+                                                                   , function(x) stats::quantile(unique(exp(df$log_list_length))
+                                                                                                 , probs = x
+                                                                                                 )
                                                                    )
                                              , log_list_length = log(list_length)
                                              , length = paste0("At list length quantile "
@@ -444,7 +455,7 @@
                                           , y = .data[[resp_var]]
                                           )
                            ) +
-        ggplot2::geom_line(ggplot2::aes(y = pred
+        ggplot2::geom_line(ggplot2::aes(y = .data$pred
                                         , group = .draw
                                         )
                            , alpha = 0.5
@@ -570,7 +581,7 @@
       #------year difference df-----------
 
       res$year_diff_df <- df %>%
-        dplyr::distinct(across(any_of(context[!context %in% time_var]))) %>%
+        dplyr::distinct(dplyr::across(tidyselect::any_of(context[!context %in% time_var]))) %>%
         dplyr::full_join(tests
                          , by = character()
                          ) %>%
@@ -589,10 +600,10 @@
                                    , value = "pred"
                                    ) %>%
         dplyr::ungroup() %>%
-        dplyr::select(any_of(context)
-                      , type
-                      , pred
-                      , .draw
+        dplyr::select(tidyselect::any_of(context)
+                      , .data$type
+                      , .data$pred
+                      , .data$.draw
                       ) %>%
         tidyr::pivot_wider(names_from = "type"
                            , values_from = c(time_var
@@ -606,19 +617,19 @@
       #-------year difference res---------
 
       res$year_diff_res <- res$year_diff_df %>%
-        dplyr::group_by(across(any_of(context))) %>%
-        dplyr::summarise(nCheck = n()
+        dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
+        dplyr::summarise(nCheck = dplyr::n()
                          , lower = sum(diff < 0) / nCheck
                          , higher = sum(diff > 0) / nCheck
                          , meanDiff = mean(diff)
                          , medianDiff = median(diff)
-                         , cilo = quantile(diff, probs = 0.05)
-                         , ciup = quantile(diff, probs = 0.95)
-                         , reference = unique(year_reference)
-                         , recent = unique(year_recent)
+                         , cilo = stats::quantile(diff, probs = 0.05)
+                         , ciup = stats::quantile(diff, probs = 0.95)
+                         , reference = unique({{ year_reference }})
+                         , recent = unique({{ year_recent }})
                          ) %>%
         dplyr::ungroup() %>%
-        dplyr::mutate(likelihood = map(lower
+        dplyr::mutate(likelihood = purr::map(lower
                                        , ~cut(.
                                               , breaks = c(0, lulikelihood$maxVal)
                                               , labels = lulikelihood$likelihood
@@ -629,7 +640,7 @@
         tidyr::unnest(cols = c(likelihood)) %>%
         dplyr::mutate(text = paste0(tolower(likelihood)
                                     , " to be lower in "
-                                    , !!ensym(geo_var)
+                                    , {{ geo_var }}
                                     , " ("
                                     , 100*round(lower,2)
                                     , "% chance)"
@@ -640,10 +651,10 @@
       #------year difference plot--------
 
       plot_data <- res$year_diff_df %>%
-        dplyr::group_by(across(any_of(geo_var))) %>%
-        dplyr::mutate(lower = sum(diff < 0) / n()) %>%
+        dplyr::group_by(dplyr::across(tidyselect::any_of(geo_var))) %>%
+        dplyr::mutate(lower = sum(diff < 0) / dplyr::n()) %>%
         dplyr::ungroup() %>%
-        dplyr::mutate(likelihood = map(lower
+        dplyr::mutate(likelihood = purr::map(lower
                                        , ~cut(.
                                               , breaks = c(0,lulikelihood$maxVal)
                                               , labels = lulikelihood$likelihood
@@ -664,7 +675,7 @@
                                                            )
                                             ) +
         ggridges::geom_density_ridges() +
-        geom_vline(xintercept = 0
+        ggplot2::geom_vline(xintercept = 0
                    , linetype = 2
                    , colour = "red"
                    ) +

@@ -21,6 +21,7 @@ Imports:
     GGally,
     ggplot2,
     ggridges,
+    magrittr,
     mgcv,
     purrr,
     rio,

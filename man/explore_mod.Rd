@@ -45,14 +45,14 @@ explore_mod(
 
 \item{draws}{Number of draws from posterior distribution to display in plots.}
 
+\item{reference_year}{Reference time at which to predict (and compare change)}
+
+\item{recent_year}{Time at which to predict to compare against reference_year}
+
 \item{re_run}{Logical. If file \code{out_file} already exists, should it be
 re-run?}
 
 \item{quant_probs}{Quantiles for summarising.}
-
-\item{tests}{Years at which to predict (and compare change) as dataframe
-with type = c("reference", "recent") and year = four-digit year corresponding
-to references and recent.}
 }
 \value{
 A list with components
