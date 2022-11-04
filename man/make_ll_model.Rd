@@ -4,12 +4,9 @@
 \alias{make_ll_model}
 \title{Make, and save to disk, a list-length corrected reporting rate model.}
 \usage{
-make_ll_model(taxa, df, out_file, geo_cols, random_col = "grid_l", ...)
+make_ll_model(df, out_file, geo_cols, random_col = "grid_l", ...)
 }
 \arguments{
-\item{taxa}{Character name of taxa for which model is being run. Used to name
-output file.}
-
 \item{df}{Cleaned, filtered data frame.}
 
 \item{out_file}{Path to file where model results are/will be saved.}
@@ -24,7 +21,7 @@ sizes.}
 \item{...}{Passed to rstanarm::stan_gamm4 (e.g. chains, iter)}
 }
 \value{
-\code{fs::path(out_path,paste0("list-length_mod_",taxa,".rds"))}
+\code{out_file}
 }
 \description{
 Make, and save to disk, a list-length corrected reporting rate model.

@@ -2,8 +2,6 @@
 
 #' Make, and save to disk, a list-length corrected reporting rate model.
 #'
-#' @param taxa Character name of taxa for which model is being run. Used to name
-#' output file.
 #' @param df Cleaned, filtered data frame.
 #' @param out_file Path to file where model results are/will be saved.
 #' @param geo_cols Character name of columns in `df` containing geographic
@@ -13,21 +11,18 @@
 #' sizes.
 #' @param ... Passed to rstanarm::stan_gamm4 (e.g. chains, iter)
 #'
-#' @return `fs::path(out_path,paste0("list-length_mod_",taxa,".rds"))`
+#' @return `out_file`
 #' @export
 #'
 #' @examples
-make_ll_model <- function(taxa
-                          , df
+make_ll_model <- function(df
                           , out_file
                           , geo_cols
                           , random_col = "grid_l"
                           , ...
                           ) {
 
-  taxa <- factor(taxa)
-
-  print(taxa)
+  print(basename(out_file))
 
   geos <- df %>%
     dplyr::distinct(across(any_of(geo_cols))) %>%
