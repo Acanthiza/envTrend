@@ -5,41 +5,15 @@
 \alias{lulikelihood}
 \title{Dataframe of likelihood thresholds and definitions}
 \format{
-\subsection{A data frame with 9 rows and
+A data frame with 9 rows and
 7 variables:
 \describe{
 \item{likelihood}{Factor. Definitions.}
 \item{maxVal}{Double. Maximum proportion to fall in likelihood category}
-\item{range}{Factor. Result of \code{cut(maxVal, breaks = c(0,.$maxVal))}}
-\item{loose}{Factor wit+
-0
--)` levels}
-\item{very}{Factor wit++
-+
-0}{
-}
-
-\subsection{--)` levels}
-\item{extreme}{Factor wit+++
-++
-+
-0}{
-}
-
-\subsection{--
----)` levels}
-\item{exceptional}{Factor wit++++
-+++
-++
-+
-0}{
-}
-
-\subsection{--}{
-
-----)` levels}
+\item{range}{Factor. Result of \code{cut(lulikelihood$maxVal, breaks = c(0,lulikelihood$maxVal)) \%>\% envFunc::vec_to_sentence()}}
+\item{loose}{Factor with levels+, 0 and -)\verb{\} \\item\{very\}\{Factor with levels++, +, 0, - and --)}}
+\item{extreme}{Factor with levels+++, ++, +, 0, -, -- and ---)\verb{\} \\item\{exceptional\}\{Factor with levels++++, +++, ++, +, 0, -, --, --- and ----)}}
 ...
-}
 }
 }
 \source{

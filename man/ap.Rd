@@ -5,10 +5,7 @@
 \alias{ap}
 \title{Stanreg model for \emph{Acacia paradoxa}}
 \format{
-object of class stanreg
-glm
-lm
-gamm4
+object of class(es) stanreg, glm, lm, gamm4
 }
 \usage{
 ap
