@@ -125,10 +125,24 @@
     <p>A data frame with 9 rows and
 7 variables:</p><dl>
 <dt>likelihood</dt><dd><p>Factor. Definitions.</p></dd>
+
 <dt>maxVal</dt><dd><p>Double. Maximum proportion to fall in likelihood category</p></dd>
-<dt>range</dt><dd><p>Factor. Result of <code>cut(lulikelihood$maxVal, breaks = c(0,lulikelihood$maxVal)) %&gt;% envFunc::vec_to_sentence()</code></p></dd>
-<dt>loose</dt><dd><p>Factor with levels+, 0 and -)<code>} \item{very}{Factor with levels++, +, 0, - and --)</code></p></dd>
-<dt>extreme</dt><dd><p>Factor with levels+++, ++, +, 0, -, -- and ---)<code>} \item{exceptional}{Factor with levels++++, +++, ++, +, 0, -, --, --- and ----)</code></p></dd>
+
+<dt>range</dt><dd><p>Factor. Result of
+<code>cut(lulikelihood$maxVal, breaks = c(0,lulikelihood$maxVal))</code></p></dd>
+
+<dt>loose</dt><dd><p>Factor with levels:
++, 0 and -</p></dd>
+
+<dt>very</dt><dd><p>Factor with levels:
+++, +, 0, - and --</p></dd>
+
+<dt>extreme</dt><dd><p>Factor with levels:
++++, ++, +, 0, -, -- and ---</p></dd>
+
+<dt>exceptional</dt><dd><p>Factor with levels:
+++++, +++, ++, +, 0, -, --, --- and ----</p></dd>
+
 ...
 
 </dl>

@@ -9,10 +9,24 @@ A data frame with 9 rows and
 7 variables:
 \describe{
 \item{likelihood}{Factor. Definitions.}
+
 \item{maxVal}{Double. Maximum proportion to fall in likelihood category}
-\item{range}{Factor. Result of \code{cut(lulikelihood$maxVal, breaks = c(0,lulikelihood$maxVal)) \%>\% envFunc::vec_to_sentence()}}
-\item{loose}{Factor with levels+, 0 and -)\verb{\} \\item\{very\}\{Factor with levels++, +, 0, - and --)}}
-\item{extreme}{Factor with levels+++, ++, +, 0, -, -- and ---)\verb{\} \\item\{exceptional\}\{Factor with levels++++, +++, ++, +, 0, -, --, --- and ----)}}
+
+\item{range}{Factor. Result of
+\code{cut(lulikelihood$maxVal, breaks = c(0,lulikelihood$maxVal))}}
+
+\item{loose}{Factor with levels:
++, 0 and -}
+
+\item{very}{Factor with levels:
+++, +, 0, - and --}
+
+\item{extreme}{Factor with levels:
++++, ++, +, 0, -, -- and ---}
+
+\item{exceptional}{Factor with levels:
+++++, +++, ++, +, 0, -, --, --- and ----}
+
 ...
 }
 }
