@@ -56,7 +56,7 @@ re-run?}
 }
 \value{
 A list with components
-\itemize{
+\describe{
 \item{count_char}{ggplot object. Count of levels within character variables.}
 \item{y_vs_char}{ggplot object. Response variable vs character variables.}
 \item{count_num}{ggplot object. Histogram of each numeric variable.}

@@ -18,7 +18,7 @@ context.}
 for model. This is usually the larger of two (probably raster) grid cell
 sizes. Default is NULL, so no random factor in model.}
 
-\item{...}{Passed to rstanarm::stan_gamm4 (e.g. chains, iter)}
+\item{...}{Passed to \code{rstanarm::stan_gamm4} (e.g. chains, iter)}
 }
 \value{
 \code{out_file}

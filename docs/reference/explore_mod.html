@@ -203,15 +203,16 @@ re-run?</p></td>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A list with components</p><ul>
-<li><p>count_charggplot object. Count of levels within character variables.</p></li>
-<li><p>y_vs_charggplot object. Response variable vs character variables.</p></li>
-<li><p>count_numggplot object. Histogram of each numeric variable.</p></li>
-<li><p>y_vs_numggplot object. Response variable vs numeric variables with <code>geom_smooth()</code>.</p></li>
-<li><p>pairs<code><a href='https://ggobi.github.io/ggally/reference/ggpairs.html'>GGally::ggpairs</a></code> object from <code>df</code>.</p></li>
-<li><p>predDataframe of <code>posterior_predict</code> for levels of interest.</p></li>
-<li><p>res<code>pred</code> summarised by <code>c(resp_var, time_var)</code>.</p></li>
-</ul>
+    <p>A list with components</p><dl>
+<dt>count_char</dt><dd><p>ggplot object. Count of levels within character variables.</p></dd>
+<dt>y_vs_char</dt><dd><p>ggplot object. Response variable vs character variables.</p></dd>
+<dt>count_num</dt><dd><p>ggplot object. Histogram of each numeric variable.</p></dd>
+<dt>y_vs_num</dt><dd><p>ggplot object. Response variable vs numeric variables with <code>geom_smooth()</code>.</p></dd>
+<dt>pairs</dt><dd><p><code><a href='https://ggobi.github.io/ggally/reference/ggpairs.html'>GGally::ggpairs</a></code> object from <code>df</code>.</p></dd>
+<dt>pred</dt><dd><p>Dataframe of <code>posterior_predict</code> for levels of interest.</p></dd>
+<dt>res</dt><dd><p><code>pred</code> summarised by <code>c(resp_var, time_var)</code>.</p></dd>
+
+</dl>
 
 
   </div>

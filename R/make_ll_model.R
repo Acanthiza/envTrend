@@ -9,7 +9,7 @@
 #' @param random_col Character name of column in `df` containing random factor
 #' for model. This is usually the larger of two (probably raster) grid cell
 #' sizes. Default is NULL, so no random factor in model.
-#' @param ... Passed to rstanarm::stan_gamm4 (e.g. chains, iter)
+#' @param ... Passed to `rstanarm::stan_gamm4` (e.g. chains, iter)
 #'
 #' @return `out_file`
 #' @export
