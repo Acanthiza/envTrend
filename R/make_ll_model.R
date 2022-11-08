@@ -4,11 +4,11 @@
 #'
 #' @param df Cleaned, filtered data frame.
 #' @param out_file Path to file where model results are/will be saved.
-#' @param geo_cols Character name of columns in `df` containing geographic
-#' context. Last index in `geo_cols` is used as primary analysis level.
+#' @param geo_col Character name of columns in `df` containing geographic
+#' context.
 #' @param random_col Character name of column in `df` containing random factor
 #' for model. This is usually the larger of two (probably raster) grid cell
-#' sizes.
+#' sizes. Default is NULL, so no random factor in model.
 #' @param ... Passed to rstanarm::stan_gamm4 (e.g. chains, iter)
 #'
 #' @return `out_file`
@@ -17,22 +17,21 @@
 #' @examples
 make_ll_model <- function(df
                           , out_file
-                          , geo_cols
-                          , random_col = "grid_l"
+                          , geo_col
+                          , random_col = NULL
                           , ...
                           ) {
 
   print(basename(out_file))
 
   geos <- df %>%
-    dplyr::distinct(across(any_of(geo_cols))) %>%
+    #dplyr::select(!tidyselect::any_of(unname(random_col))) %>%
+    dplyr::distinct(dplyr::across(tidyselect::any_of(unname(geo_col)))) %>%
     nrow()
 
-  grid_cells <- df %>%
+  randoms <- df %>%
     dplyr::distinct(across(any_of(random_col))) %>%
     nrow()
-
-  geo2 <- geo_cols[length(geo_cols)]
 
   # GAM
   if(geos > 1) {
@@ -40,19 +39,19 @@ make_ll_model <- function(df
     mod <- rstanarm::stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
                                                   , "s(year, k = 4, bs = 'ts') +"
                                                   , "s(year, k = 4, by = "
-                                                  , geo2
+                                                  , geo_col
                                                   , ", bs = 'ts') + "
-                                                  , geo2
+                                                  , geo_col
                                                   , "+"
                                                   , "log_list_length +"
-                                                  , geo2
+                                                  , geo_col
                                                   , "*log_list_length"
                                                   )
                                            )
 
                                 , data = df
                                 , family = stats::binomial()
-                                , random = if(grid_cells > 1) {
+                                , random = if(randoms > 1) {
 
                                   as.formula(paste0("~(1|"
                                                     , random_col
@@ -69,7 +68,7 @@ make_ll_model <- function(df
     mod <- rstanarm::stan_gamm4(cbind(success,trials-success) ~ s(year, k = 4, bs = "ts") +
                                   log_list_length
                                 , data = df
-                                , random = if(grid_cells > 1) {
+                                , random = if(randoms > 1) {
 
                                   as.formula(paste0("~(1|"
                                           , random_col

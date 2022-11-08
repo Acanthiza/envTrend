@@ -4,19 +4,19 @@
 \alias{make_ll_model}
 \title{Make, and save to disk, a list-length corrected reporting rate model.}
 \usage{
-make_ll_model(df, out_file, geo_cols, random_col = "grid_l", ...)
+make_ll_model(df, out_file, geo_col, random_col = NULL, ...)
 }
 \arguments{
 \item{df}{Cleaned, filtered data frame.}
 
 \item{out_file}{Path to file where model results are/will be saved.}
 
-\item{geo_cols}{Character name of columns in \code{df} containing geographic
-context. Last index in \code{geo_cols} is used as primary analysis level.}
+\item{geo_col}{Character name of columns in \code{df} containing geographic
+context.}
 
 \item{random_col}{Character name of column in \code{df} containing random factor
 for model. This is usually the larger of two (probably raster) grid cell
-sizes.}
+sizes. Default is NULL, so no random factor in model.}
 
 \item{...}{Passed to rstanarm::stan_gamm4 (e.g. chains, iter)}
 }
