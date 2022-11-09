@@ -22,8 +22,6 @@ make_ll_model <- function(df
                           , ...
                           ) {
 
-  print(basename(out_file))
-
   geos <- df %>%
     #dplyr::select(!tidyselect::any_of(unname(random_col))) %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(unname(geo_col)))) %>%
@@ -33,59 +31,94 @@ make_ll_model <- function(df
     dplyr::distinct(across(any_of(random_col))) %>%
     nrow()
 
-  # GAM
-  if(geos > 1) {
+  taxa_name <- gsub("\\..*$", "", basename(out_file))
 
-    mod <- rstanarm::stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
-                                                  , "s(year, k = 4, bs = 'ts') +"
-                                                  , "s(year, k = 4, by = "
-                                                  , geo_col
-                                                  , ", bs = 'ts') + "
-                                                  , geo_col
-                                                  , "+"
-                                                  , "log_list_length +"
-                                                  , geo_col
-                                                  , "*log_list_length"
-                                                  )
-                                           )
+  message(paste0("Trying to run rstanarm::stan_gamm4 for "
+                 , taxa_name
+                 )
+          )
 
-                                , data = df
-                                , family = stats::binomial()
-                                , random = if(randoms > 1) {
+  mod <- tryCatch(
 
-                                  as.formula(paste0("~(1|"
-                                                    , random_col
-                                                    , ")"
+    {
+
+      # GAM
+      if(geos > 1) {
+
+        rstanarm::stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
+                                                    , "s(year, k = 4, bs = 'ts') +"
+                                                    , "s(year, k = 4, by = "
+                                                    , geo_col
+                                                    , ", bs = 'ts') + "
+                                                    , geo_col
+                                                    , "+"
+                                                    , "log_list_length +"
+                                                    , geo_col
+                                                    , "*log_list_length"
                                                     )
                                              )
 
-                                } else NULL
-                                , ...
-                                )
+                                  , data = df
+                                  , family = stats::binomial()
+                                  , random = if(randoms > 1) {
 
-  } else {
+                                    as.formula(paste0("~(1|"
+                                                      , random_col
+                                                      , ")"
+                                                      )
+                                               )
 
-    mod <- rstanarm::stan_gamm4(cbind(success,trials-success) ~ s(year, k = 4, bs = "ts") +
-                                  log_list_length
-                                , data = df
-                                , random = if(randoms > 1) {
+                                  } else NULL
+                                  , ...
+                                  )
 
-                                  as.formula(paste0("~(1|"
-                                          , random_col
-                                          , ")"
-                                          )
-                                   )
+      } else {
 
-                        } else NULL
-                      , family = stats::binomial()
-                      , ...
-                      )
+        rstanarm::stan_gamm4(cbind(success,trials-success) ~ s(year, k = 4, bs = "ts") +
+                                    log_list_length
+                                  , data = df
+                                  , random = if(randoms > 1) {
+
+                                    as.formula(paste0("~(1|"
+                                            , random_col
+                                            , ")"
+                                            )
+                                     )
+
+                          } else NULL
+                        , family = stats::binomial()
+                        , ...
+                        )
+
+      }
+
+    }
+
+    , error = function(cond) {
+
+      message(paste0("rstanarm::stan_gamm4 for "
+                     , taxa_name
+                     , " gave error:"
+                     )
+              )
+
+      message(cond)
+
+    }
+
+  )
+
+  if(exists("mod")) {
+
+    rio::export(mod,out_file)
+
+    message("successfully saved rstanarm::stan_gamm4 model to "
+            , out_file
+            )
 
   }
 
-  rio::export(mod,out_file)
-
-  rm(mod)
+  rm(list = ls())
 
   gc()
 
