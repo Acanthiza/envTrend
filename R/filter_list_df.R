@@ -80,7 +80,7 @@ filter_list_df <- function(df
   max_year_remove <- temp %>%
     dplyr::group_by(dplyr::across(tidyselect::any_of(taxa_col))) %>%
     dplyr::filter(!!rlang::ensym(time_col) == max(!!rlang::ensym(time_col))) %>%
-    dplyr::filter(!!rlang::ensym(time_col) > max_year) %>%
+    dplyr::filter(!!rlang::ensym(time_col) < max_year) %>%
     dplyr::ungroup() %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
 
