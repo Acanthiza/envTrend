@@ -7,15 +7,10 @@
 filter_list_df(
   df,
   taxa_col = "taxa",
-  geo_levels,
-  tax_levels,
-  time_levels,
   min_length = 3,
   shortest_max = 3,
   min_occurrences = 5,
   min_years = 3,
-  min_lengths = 2,
-  min_lists = 3,
   min_year = as.numeric(format(Sys.Date(), "\%Y")) - 11,
   max_year = as.numeric(format(Sys.Date(), "\%Y")) - 1
 )
@@ -25,27 +20,11 @@ filter_list_df(
 
 \item{taxa_col}{Character name of column in \code{df} with taxa.}
 
-\item{geo_levels}{Character name of column in \code{df} with geographic context(s)
-of interest.}
-
-\item{tax_levels}{Character name of column(s) in \code{df} with taxonomic
-context(s) of interest.}
-
-\item{time_levels}{Character name of column(s) in \code{df} with time context(s)
-of interest.}
-
-\item{min_length}{Minimum allowable list length.}
-
 \item{shortest_max}{Minimum allowable maximum length.}
 
 \item{min_occurrences}{Minimum allowable occurrence.}
 
 \item{min_years}{Minimum allowable years with occurrence.}
-
-\item{min_lengths}{Minimum allowable unique list lengths.}
-
-\item{min_lists}{Minimum number of lists within a context defined by
-\code{geo_levels}, \code{tax_levels} and \code{time_levels}.}
 
 \item{min_year}{Must be records less than \code{min_year}.}
 
@@ -55,6 +34,6 @@ of interest.}
 Filtered data frame.
 }
 \description{
-Currently this is clunky, much room for improvement. Best run after
-envTrend::add_list_length.
+Works on results from \code{make_list_df}. Reworked to focus on only removing taxa
+(i.e. not visits or other contexts).
 }

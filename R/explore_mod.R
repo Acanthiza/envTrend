@@ -477,7 +477,7 @@
       if(has_ll) {
 
         p <- p +
-          ggplot2::geom_jitter(data = df
+          ggplot2::geom_point(data = df
                                ,ggplot2::aes(x = .data$year
                                              , y = .data[[resp_var]]
                                              , colour = exp(.data$log_list_length)
@@ -493,7 +493,7 @@
       if(!has_ll) {
 
         p <- p +
-          ggplot2::geom_jitter(data = df
+          ggplot2::geom_point(data = df
                                , ggplot2::aes(x = .data$year
                                              , y = .data[[resp_var]]
                                              , colour = .data$trials
@@ -542,7 +542,7 @@
       if(has_ll) {
 
         p <- p +
-          ggplot2::geom_jitter(data = df
+          ggplot2::geom_point(data = df
                     , ggplot2::aes(.data[[time_var]]
                                    , .data[[resp_var]]
                                    , colour = exp(.data$log_list_length)
@@ -558,7 +558,7 @@
       if(!has_ll) {
 
         p <- p +
-          ggplot2::geom_jitter(data = df
+          ggplot2::geom_point(data = df
                                , ggplot2::aes(.data[[time_var]]
                                               , .data[[resp_var]]
                                               , colour = .data$trials
@@ -685,7 +685,7 @@
                                           , reference
                                           )
                       , x = "Difference"
-                      , y = "IBRA Subregion"
+                      #, y = "IBRA Subregion"
                       , fill = "Likelihood of decrease"
                       , caption = paste0("Red dotted line indicates no change between "
                                          , reference
