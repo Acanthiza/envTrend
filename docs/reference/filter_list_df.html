@@ -122,7 +122,7 @@
     <pre class="usage"><span class='fu'>filter_list_df</span><span class='op'>(</span>
   <span class='va'>df</span>,
   taxa_col <span class='op'>=</span> <span class='st'>"taxa"</span>,
-  min_length <span class='op'>=</span> <span class='fl'>3</span>,
+  time_col <span class='op'>=</span> <span class='st'>"year"</span>,
   shortest_max <span class='op'>=</span> <span class='fl'>3</span>,
   min_occurrences <span class='op'>=</span> <span class='fl'>5</span>,
   min_years <span class='op'>=</span> <span class='fl'>3</span>,
@@ -140,6 +140,11 @@
     <tr>
       <th>taxa_col</th>
       <td><p>Character name of column in <code>df</code> with taxa.</p></td>
+    </tr>
+    <tr>
+      <th>time_col</th>
+      <td><p>Character name of column in <code>df</code> with time variable. Usually
+<code>year</code>.</p></td>
     </tr>
     <tr>
       <th>shortest_max</th>

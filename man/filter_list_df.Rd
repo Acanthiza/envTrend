@@ -7,7 +7,7 @@
 filter_list_df(
   df,
   taxa_col = "taxa",
-  min_length = 3,
+  time_col = "year",
   shortest_max = 3,
   min_occurrences = 5,
   min_years = 3,
@@ -19,6 +19,9 @@ filter_list_df(
 \item{df}{Cleaned biological data.}
 
 \item{taxa_col}{Character name of column in \code{df} with taxa.}
+
+\item{time_col}{Character name of column in \code{df} with time variable. Usually
+\code{year}.}
 
 \item{shortest_max}{Minimum allowable maximum length.}
 

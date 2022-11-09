@@ -7,6 +7,8 @@
 #'
 #' @param df Cleaned biological data.
 #' @param taxa_col Character name of column in `df` with taxa.
+#' @param time_col Character name of column in `df` with time variable. Usually
+#' `year`.
 #' @param shortest_max Minimum allowable maximum length.
 #' @param min_occurrences Minimum allowable occurrence.
 #' @param min_years Minimum allowable years with occurrence.
@@ -19,7 +21,7 @@
 #' @examples
 filter_list_df <- function(df
                            , taxa_col = "taxa"
-                           , min_length = 3
+                           , time_col = "year"
                            , shortest_max = 3
                            , min_occurrences = 5
                            , min_years = 3
@@ -53,7 +55,7 @@ filter_list_df <- function(df
   # Apply min_years
   min_years_remove <- df_filt %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col))
-                    , dplyr::across(tidyselect::any_of(time_levels))
+                    , dplyr::across(tidyselect::any_of(time_col))
                     )  %>%
     dplyr::count(dplyr::across(tidyselect::any_of(taxa_col))
                  , name = "years"
@@ -64,21 +66,21 @@ filter_list_df <- function(df
   # Find min_year
   temp <- df_filt %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col))
-                    , dplyr::across(tidyselect::any_of(time_levels))
+                    , dplyr::across(tidyselect::any_of(time_col))
                     )
 
   min_year_remove <- temp %>%
     dplyr::group_by(dplyr::across(tidyselect::any_of(taxa_col))) %>%
-    dplyr::filter(year == min(year)) %>%
-    dplyr::filter(year > min_year) %>%
+    dplyr::filter(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col))) %>%
+    dplyr::filter(!!rlang::ensym(time_col) > min_year) %>%
     dplyr::ungroup() %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
 
   # Find max_year
   max_year_remove <- temp %>%
     dplyr::group_by(dplyr::across(tidyselect::any_of(taxa_col))) %>%
-    dplyr::filter(year == max(year)) %>%
-    dplyr::filter(year > max_year) %>%
+    dplyr::filter(!!rlang::ensym(time_col) == max(!!rlang::ensym(time_col))) %>%
+    dplyr::filter(!!rlang::ensym(time_col) > max_year) %>%
     dplyr::ungroup() %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
 
