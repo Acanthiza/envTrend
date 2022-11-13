@@ -74,8 +74,11 @@ make_ll_model <- function(df
 
       } else {
 
-        rstanarm::stan_gamm4(cbind(success,trials-success) ~ s(year, k = 4, bs = "ts") +
-                                    log_list_length
+        rstanarm::stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
+                                               , "s(year, k = 4, bs = 'ts') +"
+                                               , "log_list_length "
+                                               )
+                                        )
                                   , data = df
                                   , random = if(randoms > 1) {
 
@@ -103,6 +106,12 @@ make_ll_model <- function(df
               )
 
       message(cond)
+
+    }
+
+    , finally = {
+
+      "Hopefully the other code will keep running...."
 
     }
 
