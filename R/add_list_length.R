@@ -25,19 +25,20 @@
 
     df %>%
       dplyr::left_join(df %>%
+                         dplyr::filter(success > 0) %>%
                          dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col))
                                          , dplyr::across(tidyselect::any_of(context))
                                          ) %>%
-                         {if(create_list_col) (.) %>%
-                             tidyr::unite(col = "list"
-                                          , tidyselect::any_of(context)
-                                          , sep = sep
-                                          , remove = FALSE
-                                          ) else (.)
-                             } %>%
-                         dplyr::add_count(dplyr::across(tidyselect::any_of(context))
-                                          , name = "list_length"
-                                          )
-                       )
+                         dplyr::count(dplyr::across(tidyselect::any_of(context))
+                                      , name = "list_length"
+                                      )
+                       ) %>%
+      {if(create_list_col) (.) %>%
+          tidyr::unite(col = "list"
+                       , tidyselect::any_of(context)
+                       , sep = sep
+                       , remove = FALSE
+                       ) else (.)
+        }
 
   }
