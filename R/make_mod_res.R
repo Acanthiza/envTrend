@@ -9,7 +9,7 @@
 #' @param rec Numeric. Recent year(s) to compare to reference
 #' @param draws Passed to `ndraws` argument of `tidybayes::add_predicted_draws`
 #' @param list_length_q Numeric. What list lengths quantiles to predict at?
-#' @param res_q. Numeric. What quantiles to summarise predictions at?
+#' @param res_q Numeric. What quantiles to summarise predictions at?
 #' @param do_gc Logical. Run `base::gc` after predict? On a server with shared
 #' resources, can be necessary when summarising many, many models to prevent
 #' filling RAM.
@@ -36,6 +36,7 @@ make_mod_res <- function(path_to_model_file
                          , rec = recent
                          , draws = 200
                          , list_length_q = c(0.25, 0.5, 0.75)
+                         , res_q = c(0.1, 0.5, 0.9)
                          , do_gc = TRUE
                          ) {
 

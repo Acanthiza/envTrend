@@ -109,7 +109,7 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Summarise results from <code>make_ll_model</code></h1>
-    <small class="dont-index">Source: <a href='https://github.com/Acanthiza/envTrend/blob/master/R/mod_summmary.R'><code>R/mod_summmary.R</code></a></small>
+    <small class="dont-index">Source: <a href='https://github.com/Acanthiza/envTrend/blob/master/R/make_mod_res.R'><code>R/make_mod_res.R</code></a></small>
     <div class="hidden name"><code>make_mod_res.Rd</code></div>
     </div>
 
@@ -124,6 +124,7 @@
   rec <span class='op'>=</span> <span class='va'>recent</span>,
   draws <span class='op'>=</span> <span class='fl'>200</span>,
   list_length_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.25</span>, <span class='fl'>0.5</span>, <span class='fl'>0.75</span><span class='op'>)</span>,
+  res_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
   do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span></pre>
 
@@ -156,14 +157,14 @@
       <td><p>Numeric. What list lengths quantiles to predict at?</p></td>
     </tr>
     <tr>
+      <th>res_q</th>
+      <td><p>Numeric. What quantiles to summarise predictions at?</p></td>
+    </tr>
+    <tr>
       <th>do_gc</th>
       <td><p>Logical. Run <code><a href='https://rdrr.io/r/base/gc.html'>base::gc</a></code> after predict? On a server with shared
 resources, can be necessary when summarising many, many models to prevent
 filling RAM.</p></td>
-    </tr>
-    <tr>
-      <th>res_q.</th>
-      <td><p>Numeric. What quantiles to summarise predictions at?</p></td>
     </tr>
     </table>
 
