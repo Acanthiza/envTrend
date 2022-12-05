@@ -11,7 +11,7 @@ filter_list_df(
   shortest_max = 3,
   min_occurrences = 5,
   min_years = 3,
-  min_year = as.numeric(format(Sys.Date(), "\%Y")) - 11,
+  min_span = 10,
   max_year = as.numeric(format(Sys.Date(), "\%Y")) - 1
 )
 }
@@ -29,9 +29,9 @@ filter_list_df(
 
 \item{min_years}{Minimum allowable years with occurrence.}
 
-\item{min_year}{Must be records less than \code{min_year}.}
-
 \item{max_year}{Much be records greater than \code{max_year}.}
+
+\item{min_year}{Must be records less than \code{min_year}.}
 }
 \value{
 Filtered data frame.

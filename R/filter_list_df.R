@@ -25,7 +25,7 @@ filter_list_df <- function(df
                            , shortest_max = 3
                            , min_occurrences = 5
                            , min_years = 3
-                           , min_year = as.numeric(format(Sys.Date(),"%Y")) - 11
+                           , min_span = 10
                            , max_year = as.numeric(format(Sys.Date(),"%Y")) - 1
                            ) {
 
@@ -63,21 +63,31 @@ filter_list_df <- function(df
     dplyr::filter(years < min_years) %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
 
-  # Find min_year
-  temp <- df_filt %>%
+  # Apply min_span
+  span_remove <- df_filt %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col))
                     , dplyr::across(tidyselect::any_of(time_col))
-                    )
-
-  min_year_remove <- temp %>%
+                    ) %>%
     dplyr::group_by(dplyr::across(tidyselect::any_of(taxa_col))) %>%
-    dplyr::filter(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col))) %>%
-    dplyr::filter(!!rlang::ensym(time_col) > min_year) %>%
+    dplyr::mutate(max_min = dplyr::case_when(year == max(year) ~ TRUE
+                                             , year == min(year) ~ TRUE
+                                             , TRUE ~ FALSE
+                                             )
+                  ) %>%
+    dplyr::filter(max_min) %>%
+    dplyr::arrange(taxa, year) %>%
+    dplyr::mutate(span = year - lag(year)) %>%
     dplyr::ungroup() %>%
+    dplyr::filter(!is.na(span)) %>%
+    dplyr::filter(span < min_span) %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
 
-  # Find max_year
-  max_year_remove <- temp %>%
+
+  # Apply max_year
+  max_year_remove <- df_filt %>%
+    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col))
+                    , dplyr::across(tidyselect::any_of(time_col))
+                    ) %>%
     dplyr::group_by(dplyr::across(tidyselect::any_of(taxa_col))) %>%
     dplyr::filter(!!rlang::ensym(time_col) == max(!!rlang::ensym(time_col))) %>%
     dplyr::filter(!!rlang::ensym(time_col) < max_year) %>%

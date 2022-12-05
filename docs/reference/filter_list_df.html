@@ -126,7 +126,7 @@
   shortest_max <span class='op'>=</span> <span class='fl'>3</span>,
   min_occurrences <span class='op'>=</span> <span class='fl'>5</span>,
   min_years <span class='op'>=</span> <span class='fl'>3</span>,
-  min_year <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/numeric.html'>as.numeric</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/format.html'>format</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Sys.time.html'>Sys.Date</a></span><span class='op'>(</span><span class='op'>)</span>, <span class='st'>"%Y"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>11</span>,
+  min_span <span class='op'>=</span> <span class='fl'>10</span>,
   max_year <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/numeric.html'>as.numeric</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/format.html'>format</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Sys.time.html'>Sys.Date</a></span><span class='op'>(</span><span class='op'>)</span>, <span class='st'>"%Y"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>
 <span class='op'>)</span></pre>
 
@@ -159,12 +159,12 @@
       <td><p>Minimum allowable years with occurrence.</p></td>
     </tr>
     <tr>
-      <th>min_year</th>
-      <td><p>Must be records less than <code>min_year</code>.</p></td>
-    </tr>
-    <tr>
       <th>max_year</th>
       <td><p>Much be records greater than <code>max_year</code>.</p></td>
+    </tr>
+    <tr>
+      <th>min_year</th>
+      <td><p>Must be records less than <code>min_year</code>.</p></td>
     </tr>
     </table>
 

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Dataframe of likelihood thresholds and definitions — lulikelihood • envTrend</title>
+<title>Summarise results from make_ll_model — make_mod_res • envTrend</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Dataframe of likelihood thresholds and definitions — lulikelihood" />
-<meta property="og:description" content="Following the intergovernmental panel on climate change IPCC." />
+<meta property="og:title" content="Summarise results from make_ll_model — make_mod_res" />
+<meta property="og:description" content="Summarise results from make_ll_model" />
 
 
 
@@ -108,48 +108,81 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Dataframe of likelihood thresholds and definitions</h1>
-    <small class="dont-index">Source: <a href='https://github.com/Acanthiza/envTrend/blob/master/R/data.R'><code>R/data.R</code></a></small>
-    <div class="hidden name"><code>lulikelihood.Rd</code></div>
+    <h1>Summarise results from <code>make_ll_model</code></h1>
+    <small class="dont-index">Source: <a href='https://github.com/Acanthiza/envTrend/blob/master/R/mod_summmary.R'><code>R/mod_summmary.R</code></a></small>
+    <div class="hidden name"><code>make_mod_res.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Following the intergovernmental panel on climate change <a href='https://www.ipcc.ch/site/assets/uploads/2017/08/AR5_Uncertainty_Guidance_Note.pdf'>IPCC</a>.</p>
+    <p>Summarise results from <code>make_ll_model</code></p>
     </div>
 
-    <pre class="usage"><span class='va'>lulikelihood</span></pre>
+    <pre class="usage"><span class='fu'>make_mod_res</span><span class='op'>(</span>
+  <span class='va'>path_to_model_file</span>,
+  <span class='va'>scale_name</span>,
+  ref <span class='op'>=</span> <span class='va'>reference</span>,
+  rec <span class='op'>=</span> <span class='va'>recent</span>,
+  draws <span class='op'>=</span> <span class='fl'>200</span>,
+  list_length_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.25</span>, <span class='fl'>0.5</span>, <span class='fl'>0.75</span><span class='op'>)</span>,
+  do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>
+<span class='op'>)</span></pre>
 
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>path_to_model_file</th>
+      <td><p>Character. Path to saved results from
+<code>make_ll_model</code></p></td>
+    </tr>
+    <tr>
+      <th>scale_name</th>
+      <td><p>Character. Name of column in original data with</p></td>
+    </tr>
+    <tr>
+      <th>ref</th>
+      <td><p>Numeric. Reference year (or other time point)</p></td>
+    </tr>
+    <tr>
+      <th>rec</th>
+      <td><p>Numeric. Recent year(s) to compare to reference</p></td>
+    </tr>
+    <tr>
+      <th>draws</th>
+      <td><p>Passed to <code>ndraws</code> argument of <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_predicted_draws</a></code></p></td>
+    </tr>
+    <tr>
+      <th>list_length_q</th>
+      <td><p>Numeric. What list lengths quantiles to predict at?</p></td>
+    </tr>
+    <tr>
+      <th>do_gc</th>
+      <td><p>Logical. Run <code><a href='https://rdrr.io/r/base/gc.html'>base::gc</a></code> after predict? On a server with shared
+resources, can be necessary when summarising many, many models to prevent
+filling RAM.</p></td>
+    </tr>
+    <tr>
+      <th>res_q.</th>
+      <td><p>Numeric. What quantiles to summarise predictions at?</p></td>
+    </tr>
+    </table>
 
-    <h2 class="hasAnchor" id="format"><a class="anchor" href="#format"></a>Format</h2>
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>A data frame with 9 rows and
-7 variables:</p><dl>
-<dt>likelihood</dt><dd><p>Factor. Definitions.</p></dd>
-
-<dt>maxVal</dt><dd><p>Double. Maximum proportion to fall in likelihood category</p></dd>
-
-<dt>range</dt><dd><p>Factor. Result of
-<code>cut(lulikelihood$maxVal, breaks = c(0,lulikelihood$maxVal))</code></p></dd>
-
-<dt>loose</dt><dd><p>Factor with levels:
-+, 0 and -</p></dd>
-
-<dt>very</dt><dd><p>Factor with levels:
-++, +, 0, - and --</p></dd>
-
-<dt>extreme</dt><dd><p>Factor with levels:
-+++, ++, +, 0, -, -- and ---</p></dd>
-
-<dt>exceptional</dt><dd><p>Factor with levels:
-++++, +++, ++, +, 0, -, --, --- and ----</p></dd>
-
-...
+    <p>A list with components</p><dl>
+<dt>list_length</dt><dd><p>data frame of list length quantiles in original data</p></dd>
+<dt>data</dt><dd><p>data frame of original data retrieved from <code>mod$data</code></p></dd>
+<dt>pred</dt><dd><p>data frame of predictions (via
+<code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_predicted_draws</a></code>), including a <code>diff</code> column of the
+difference between <code>ref</code>erence and each <code>rec</code>ent.</p></dd>
+<dt>res</dt><dd><p>data frame of predictions summarised, including columns for
+each of <code>res_q</code> (applied to the differences between <code>ref</code> and <code>rec</code>)</p></dd>
+<dt>n_data</dt><dd><p><code>nrow(mod$data)</code></p></dd>
+<dt>n_fixed_coefs</dt><dd><p><code>length(mod$coefficients[!grepl("b\\[", names(mod$coefficients))])</code></p></dd>
+<dt>n_random_coefs</dt><dd><p><code>length(mod$coefficients[grepl("b\\[", names(mod$coefficients))])</code></p></dd>
 
 </dl>
 
-    <h2 class="hasAnchor" id="source"><a class="anchor" href="#source"></a>Source</h2>
-
-    <p><a href='https://www.ipcc.ch/site/assets/uploads/2017/08/AR5_Uncertainty_Guidance_Note.pdf'>https://www.ipcc.ch/site/assets/uploads/2017/08/AR5_Uncertainty_Guidance_Note.pdf</a></p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
