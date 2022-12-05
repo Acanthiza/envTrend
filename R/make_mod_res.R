@@ -120,8 +120,8 @@ make_mod_res <- function(path_to_model_file
                        , lower = sum(diff < 0) / dplyr::n()
                        , diff = envFunc::quibble(diff, res_q)
                        ) %>%
-      tidyr::unnest(cols = c(diff))
       dplyr::ungroup() %>%
+      tidyr::unnest(cols = c(diff)) %>%
       envFunc::add_likelihood(lower)
 
     res$n_data <- nrow(mod$data)
