@@ -19,7 +19,8 @@ explore_mod(
   reference_year = 2000,
   recent_year = 2010,
   re_run = FALSE,
-  quant_probs = c(0.05, 0.5, 0.95)
+  quant_probs = c(0.05, 0.5, 0.95),
+  binom_denom = "trials"
 )
 }
 \arguments{

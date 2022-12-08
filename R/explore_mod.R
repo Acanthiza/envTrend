@@ -47,6 +47,7 @@
                           , recent_year = 2010
                           , re_run = FALSE
                           , quant_probs = c(0.05, 0.5, 0.95)
+                          , binom_denom = "trials"
                           ) {
 
     `:=` <- rlang::`:=`
@@ -270,6 +271,23 @@
           ggplot2::scale_colour_viridis_d(end = 0.9)
 
 
+        res$resid_plot_norm <- ggplot(res$resid
+                                      , aes(residual)
+                                      ) +
+          ggplot2::geom_function(fun = dnorm
+                                 , colour = "light blue"
+                                 , size = 1
+                                , args = list(mean = mean(res$resid$residual)
+                                              , sd = sd(res$resid$residual)
+                                              )
+                                 ) +
+          ggplot2::geom_density(colour = "dark blue"
+                                , size = 1
+                                ) +
+          ggplot2::labs(x = "value"
+                        , y = "Density"
+                        )
+
         res$resid_plot_num <- if(has_numeric) {
 
           plot_data <- res$resid %>%
@@ -349,7 +367,7 @@
                       , log_list_length = if(has_ll) log(list_length) else NULL
                       , col = row.names(.)
                       , success = if(is_binomial_mod) 0 else NULL
-                      , trials = if(is_binomial_mod) 100 else NULL
+                      , !!ensym(binom_denom) := if(is_binomial_mod) 100 else NULL
                       ) %>%
         tidybayes::add_epred_draws(mod
                                    , ndraws = draws
@@ -383,7 +401,7 @@
       plot_data <- df %>%
         dplyr::distinct(dplyr::across(tidyselect::any_of(context))) %>%
         dplyr::mutate(success = 0
-                      , trials = 100
+                      , !!ensym(binom_denom) := 100
                       ) %>%
         dplyr::full_join(tibble::tibble(probs = 0.5) %>%
                            {if(has_ll) (.) %>%
@@ -496,7 +514,7 @@
           ggplot2::geom_point(data = df
                                , ggplot2::aes(x = .data$year
                                              , y = .data[[resp_var]]
-                                             , colour = .data$trials
+                                             , colour = .data[[binom_denom]]
                                              )
                                , width = 0.1
                                , height = 0.01
@@ -561,13 +579,13 @@
           ggplot2::geom_point(data = df
                                , ggplot2::aes(.data[[time_var]]
                                               , .data[[resp_var]]
-                                              , colour = .data$trials
+                                              , colour = .data[[binom_denom]]
                                               )
                                , width = 0.1
                                , height = 0.05
                                ) +
           ggplot2::scale_colour_viridis_c() +
-          ggplot2::labs(colour = "Trials")
+          ggplot2::labs(colour = binom_denom)
 
       }
 
@@ -584,7 +602,7 @@
         dplyr::mutate(list_length = if(has_ll) median(exp(df$log_list_length)) else NULL
                       , log_list_length = if(has_ll) log(list_length) else NULL
                       , success = 0
-                      , trials = 100
+                      , binom_denom := 100
                       , nCheck = nrow(tibble::as_tibble(mod))
                       , mod_type = mod_type
                       , taxa = taxa
