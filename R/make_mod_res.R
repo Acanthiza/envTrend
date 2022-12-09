@@ -4,9 +4,11 @@
 #'
 #' @param path_to_model_file Character. Path to saved results from
 #' `make_ll_model`
-#' @param scale_name Character. Name of column in original data with
+#' @param scale_name Character. Name of column in original data with spatial
+#' data.
+#' @param time_col Character. Name of column in original data with time data.
 #' @param ref Numeric. Reference year (or other time point)
-#' @param rec Numeric. Recent year(s) to compare to reference
+#' @param pred_step Numeric. What step (in units of `time_col`) to predict at?
 #' @param draws Passed to `ndraws` argument of `tidybayes::add_predicted_draws`
 #' @param list_length_q Numeric. What list lengths quantiles to predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
@@ -32,8 +34,9 @@
 #' @examples
 make_mod_res <- function(path_to_model_file
                          , scale_name
-                         , ref = reference
-                         , rec = recent
+                         , time_col = "year"
+                         , ref = 2000
+                         , pred_step = 2
                          , draws = 200
                          , list_length_q = c(0.25, 0.5, 0.75)
                          , res_q = c(0.1, 0.5, 0.9)
@@ -76,12 +79,21 @@ make_mod_res <- function(path_to_model_file
 
     }
 
+    pred_times <- sort(unique(c(seq(min(mod$data[[time_col]], na.rm = TRUE)
+                                    , max(mod$data[[time_col]], na.rm = TRUE)
+                                    , pred_step
+                                    )
+                                , ref
+                                )
+                              )
+                       )
+
     pred <- mod$data %>%
       dplyr::distinct(dplyr::across(any_of(scale_name))) %>%
       dplyr::mutate(success = 0
                     , trials = 100
                     )  %>%
-      dplyr::left_join(tibble::tibble(year = c(reference, recent))
+      dplyr::left_join(tibble::tibble(!!rlang::ensym(time_col) := pred_times)
                        , by = character()
                        ) %>%
       dplyr::full_join(res$list_length
@@ -96,7 +108,7 @@ make_mod_res <- function(path_to_model_file
       dplyr::mutate(pred = pred / trials)
 
     ref_draw <- pred %>%
-      dplyr::filter(year == ref) %>%
+      dplyr::filter(!!rlang::ensym(time_col) == ref) %>%
       dplyr::select(tidyselect::any_of(scale_name)
                     , tidyselect::matches("list_length")
                     , .draw
@@ -104,15 +116,13 @@ make_mod_res <- function(path_to_model_file
                     )
 
     res$pred <- pred %>%
-      dplyr::filter(year != ref) %>%
       dplyr::left_join(ref_draw) %>%
       dplyr::mutate(diff = -1 * (ref - pred)
                     , diff_prop = pred / ref
                     )
 
     res$res <- res$pred %>%
-      dplyr::group_by(dplyr::across(any_of(scale_name))
-                      , year
+      dplyr::group_by(dplyr::across(any_of(c(scale_name, time_col)))
                       , dplyr::across(contains("list_length"))
                       ) %>%
       dplyr::summarise(check = dplyr::n() - draws

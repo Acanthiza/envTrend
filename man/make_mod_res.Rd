@@ -7,8 +7,9 @@
 make_mod_res(
   path_to_model_file,
   scale_name,
-  ref = reference,
-  rec = recent,
+  time_col = "year",
+  ref = 2000,
+  pred_step = 2,
   draws = 200,
   list_length_q = c(0.25, 0.5, 0.75),
   res_q = c(0.1, 0.5, 0.9),
@@ -19,11 +20,14 @@ make_mod_res(
 \item{path_to_model_file}{Character. Path to saved results from
 \code{make_ll_model}}
 
-\item{scale_name}{Character. Name of column in original data with}
+\item{scale_name}{Character. Name of column in original data with spatial
+data.}
+
+\item{time_col}{Character. Name of column in original data with time data.}
 
 \item{ref}{Numeric. Reference year (or other time point)}
 
-\item{rec}{Numeric. Recent year(s) to compare to reference}
+\item{pred_step}{Numeric. What step (in units of \code{time_col}) to predict at?}
 
 \item{draws}{Passed to \code{ndraws} argument of \code{tidybayes::add_predicted_draws}}
 
