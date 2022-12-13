@@ -114,7 +114,7 @@ make_mod_res <- function(path_to_model_file
     if(ref < 0) {
 
       ref_draw <- pred %>%
-        dplyr::mutate(year = year - ref_time) %>%
+        dplyr::mutate(year = year - ref) %>%
         dplyr::rename(ref = pred) %>%
         dplyr::select(tidyselect::any_of(scale_name)
                       , tidyselect::any_of(time_col)
