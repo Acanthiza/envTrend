@@ -7,7 +7,9 @@
 #' @param scale_name Character. Name of column in original data with spatial
 #' data.
 #' @param time_col Character. Name of column in original data with time data.
-#' @param ref Numeric. Reference year (or other time point)
+#' @param ref Numeric. Either a reference year (or other time point) or a
+#' negative integer. If the former, all years will be compared to that
+#' `ref`erence. If the later, all years will be compared to themselves + `ref`.
 #' @param pred_step Numeric. What step (in units of `time_col`) to predict at?
 #' @param draws Passed to `ndraws` argument of `tidybayes::add_predicted_draws`
 #' @param list_length_q Numeric. What list lengths quantiles to predict at?
@@ -88,6 +90,8 @@ make_mod_res <- function(path_to_model_file
                               )
                        )
 
+    pred_times <- pred_times[pred_times > 0]
+
     pred <- mod$data %>%
       dplyr::distinct(dplyr::across(any_of(scale_name))) %>%
       dplyr::mutate(success = 0
@@ -107,13 +111,28 @@ make_mod_res <- function(path_to_model_file
       dplyr::ungroup() %>%
       dplyr::mutate(pred = pred / trials)
 
-    ref_draw <- pred %>%
-      dplyr::filter(!!rlang::ensym(time_col) == ref) %>%
-      dplyr::select(tidyselect::any_of(scale_name)
-                    , tidyselect::matches("list_length")
-                    , .draw
-                    , ref = pred
-                    )
+    if(ref < 0) {
+
+      ref_draw <- pred %>%
+        dplyr::mutate(year = year - ref_time) %>%
+        dplyr::rename(ref = pred) %>%
+        dplyr::select(tidyselect::any_of(scale_name)
+                      , tidyselect::any_of(time_col)
+                      , .draw
+                      , ref
+                      )
+
+    } else {
+
+      ref_draw <- pred %>%
+        dplyr::filter(!!rlang::ensym(time_col) == ref) %>%
+        dplyr::select(tidyselect::any_of(scale_name)
+                      , tidyselect::matches("list_length")
+                      , .draw
+                      , ref = pred
+                      )
+
+    }
 
     res$pred <- pred %>%
       dplyr::left_join(ref_draw) %>%
@@ -122,13 +141,17 @@ make_mod_res <- function(path_to_model_file
                     )
 
     res$res <- res$pred %>%
-      dplyr::group_by(dplyr::across(any_of(c(scale_name, time_col)))
+      dplyr::group_by(dplyr::across(any_of(c(scale_name
+                                             , time_col
+                                             )
+                                           )
+                                    )
                       , dplyr::across(contains("list_length"))
                       ) %>%
       dplyr::summarise(check = dplyr::n() - draws
                        , pred = median(pred)
-                       , lower = sum(diff < 0) / dplyr::n()
-                       , diff = envFunc::quibble(diff, res_q)
+                       , lower = sum(diff < 0, na.rm = TRUE) / dplyr::n()
+                       , diff = envFunc::quibble(diff, res_q, na.rm = TRUE)
                        ) %>%
       dplyr::ungroup() %>%
       tidyr::unnest(cols = c(diff)) %>%

@@ -25,7 +25,9 @@ data.}
 
 \item{time_col}{Character. Name of column in original data with time data.}
 
-\item{ref}{Numeric. Reference year (or other time point)}
+\item{ref}{Numeric. Either a reference year (or other time point) or a
+negative integer. If the former, all years will be compared to that
+\code{ref}erence. If the later, all years will be compared to themselves + \code{ref}.}
 
 \item{pred_step}{Numeric. What step (in units of \code{time_col}) to predict at?}
 
