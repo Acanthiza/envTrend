@@ -99,19 +99,11 @@ make_ll_model <- function(df
 
     , error = function(cond) {
 
-      message(paste0("rstanarm::stan_gamm4 for "
-                     , taxa_name
-                     , " gave error:"
-                     )
-              )
-
-      message(cond)
-
-    }
-
-    , finally = {
-
-      "Hopefully the other code will keep running...."
+      paste0("rstanarm::stan_gamm4 for "
+             , taxa_name
+             , " gave error:"
+             , message(cond)
+             )
 
     }
 
@@ -120,10 +112,6 @@ make_ll_model <- function(df
   if(exists("mod")) {
 
     rio::export(mod,out_file)
-
-    message("successfully saved rstanarm::stan_gamm4 model to "
-            , out_file
-            )
 
   }
 
