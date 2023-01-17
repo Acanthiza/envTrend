@@ -4,7 +4,6 @@
 #'
 #' @param taxa Scientific name of taxa (for labelling things).
 #' @param common Common name of taxa (also used in labels).
-#' @param df Data used for model saved at `mod_path`.
 #' @param mod_path Path to saved model.
 #' @param out_file Path to save exploration results back to.
 #' @param mod_type Type of model (e.g. 'reporting rate', or 'occupancy')
@@ -34,7 +33,6 @@
 #' @examples
   explore_mod <- function(taxa
                           , common
-                          , df
                           , mod_path
                           , out_file = gsub("\\.rds", "_summary.rds", mod_path)
                           , mod_type
@@ -83,6 +81,8 @@
       context <- c(geo_var, time_var, mod_type)
 
       mod <- rio::import(mod_path)
+
+      df <- mod$data
 
       #-------setup explore-------
 

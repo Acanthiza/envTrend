@@ -7,7 +7,6 @@
 explore_mod(
   taxa,
   common,
-  df,
   mod_path,
   out_file = gsub("\\\\.rds", "_summary.rds", mod_path),
   mod_type,
@@ -27,8 +26,6 @@ explore_mod(
 \item{taxa}{Scientific name of taxa (for labelling things).}
 
 \item{common}{Common name of taxa (also used in labels).}
-
-\item{df}{Data used for model saved at \code{mod_path}.}
 
 \item{mod_path}{Path to saved model.}
 
