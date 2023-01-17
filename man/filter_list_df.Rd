@@ -6,7 +6,7 @@
 \usage{
 filter_list_df(
   df,
-  taxa_col = "taxa",
+  var_cols = "taxa",
   time_col = "year",
   shortest_max = 3,
   min_occurrences = 5,
@@ -18,7 +18,8 @@ filter_list_df(
 \arguments{
 \item{df}{Cleaned biological data.}
 
-\item{taxa_col}{Character name of column in \code{df} with taxa.}
+\item{var_cols}{Character name of column(s) in \code{df} that will be variables
+in the model (or will define the model; e.g. \code{taxa_col})}
 
 \item{time_col}{Character name of column in \code{df} with time variable. Usually
 \code{year}.}
@@ -37,6 +38,5 @@ filter_list_df(
 Filtered data frame.
 }
 \description{
-Works on results from \code{make_list_df}. Reworked to focus on only removing taxa
-(i.e. not visits or other contexts).
+Works on results from \code{make_list_df}. Probably works on other dfs.
 }

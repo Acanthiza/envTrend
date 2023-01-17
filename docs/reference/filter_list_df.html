@@ -40,8 +40,7 @@
 
 
 <meta property="og:title" content="Filter occurrence data to a set of specifications — filter_list_df" />
-<meta property="og:description" content="Works on results from make_list_df. Reworked to focus on only removing taxa
-(i.e. not visits or other contexts)." />
+<meta property="og:description" content="Works on results from make_list_df. Probably works on other dfs." />
 
 
 
@@ -115,13 +114,12 @@
     </div>
 
     <div class="ref-description">
-    <p>Works on results from <code>make_list_df</code>. Reworked to focus on only removing taxa
-(i.e. not visits or other contexts).</p>
+    <p>Works on results from <code>make_list_df</code>. Probably works on other dfs.</p>
     </div>
 
     <pre class="usage"><span class='fu'>filter_list_df</span><span class='op'>(</span>
   <span class='va'>df</span>,
-  taxa_col <span class='op'>=</span> <span class='st'>"taxa"</span>,
+  var_cols <span class='op'>=</span> <span class='st'>"taxa"</span>,
   time_col <span class='op'>=</span> <span class='st'>"year"</span>,
   shortest_max <span class='op'>=</span> <span class='fl'>3</span>,
   min_occurrences <span class='op'>=</span> <span class='fl'>5</span>,
@@ -138,8 +136,9 @@
       <td><p>Cleaned biological data.</p></td>
     </tr>
     <tr>
-      <th>taxa_col</th>
-      <td><p>Character name of column in <code>df</code> with taxa.</p></td>
+      <th>var_cols</th>
+      <td><p>Character name of column(s) in <code>df</code> that will be variables
+in the model (or will define the model; e.g. <code>taxa_col</code>)</p></td>
     </tr>
     <tr>
       <th>time_col</th>

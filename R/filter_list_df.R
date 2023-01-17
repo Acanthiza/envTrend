@@ -2,11 +2,11 @@
 
 #' Filter occurrence data to a set of specifications
 #'
-#' Works on results from `make_list_df`. Reworked to focus on only removing taxa
-#'  (i.e. not visits or other contexts).
+#' Works on results from `make_list_df`. Probably works on other dfs.
 #'
 #' @param df Cleaned biological data.
-#' @param taxa_col Character name of column in `df` with taxa.
+#' @param var_cols Character name of column(s) in `df` that will be variables
+#' in the model (or will define the model; e.g. `taxa_col`)
 #' @param time_col Character name of column in `df` with time variable. Usually
 #' `year`.
 #' @param shortest_max Minimum allowable maximum length.
@@ -20,7 +20,7 @@
 #'
 #' @examples
 filter_list_df <- function(df
-                           , taxa_col = "taxa"
+                           , var_cols = "taxa"
                            , time_col = "year"
                            , shortest_max = 3
                            , min_occurrences = 5
@@ -38,70 +38,69 @@ filter_list_df <- function(df
 
   # Apply shortest_max
   shortest_max_remove <- df_filt %>%
-    dplyr::group_by(dplyr::across(tidyselect::any_of(taxa_col))) %>%
+    dplyr::group_by(dplyr::across(tidyselect::any_of(var_cols))) %>%
     dplyr::filter(list_length == max(list_length)) %>%
     dplyr::filter(list_length < shortest_max) %>%
     dplyr::ungroup() %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
+    dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols)))
 
   # Apply min_occurrences
   min_occurences_remove <- df_filt %>%
-    dplyr::group_by(dplyr::across(tidyselect::any_of(taxa_col))) %>%
+    dplyr::group_by(dplyr::across(tidyselect::any_of(var_cols))) %>%
     dplyr::summarise(occurences = n()) %>%
     dplyr::filter(occurences < min_occurrences) %>%
     dplyr::ungroup() %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
+    dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols)))
 
   # Apply min_years
   min_years_remove <- df_filt %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col))
+    dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols))
                     , dplyr::across(tidyselect::any_of(time_col))
                     )  %>%
-    dplyr::count(dplyr::across(tidyselect::any_of(taxa_col))
+    dplyr::count(dplyr::across(tidyselect::any_of(var_cols))
                  , name = "years"
                  ) %>%
     dplyr::filter(years < min_years) %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
+    dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols)))
 
   # Apply min_span
   span_remove <- df_filt %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col))
+    dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols))
                     , dplyr::across(tidyselect::any_of(time_col))
                     ) %>%
-    dplyr::group_by(dplyr::across(tidyselect::any_of(taxa_col))) %>%
-    dplyr::mutate(max_min = dplyr::case_when(year == max(year) ~ TRUE
-                                             , year == min(year) ~ TRUE
-                                             , TRUE ~ FALSE
+    dplyr::group_by(dplyr::across(tidyselect::any_of(var_cols))) %>%
+    dplyr::mutate(max_min = dplyr::case_when(year == max(year) ~ "max"
+                                             , year == min(year) ~ "min"
+                                             , TRUE ~ "not"
                                              )
                   ) %>%
-    dplyr::filter(max_min) %>%
-    dplyr::arrange(taxa, year) %>%
-    dplyr::mutate(span = year - lag(year)) %>%
     dplyr::ungroup() %>%
+    dplyr::filter(max_min != "not") %>%
+    tidyr::pivot_wider(names_from = "max_min"
+                       , values_from = "year"
+                       ) %>%
+    dplyr::mutate(span = max - min) %>%
     dplyr::filter(!is.na(span)) %>%
     dplyr::filter(span < min_span) %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
+    dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols)))
 
 
   # Apply max_year
   max_year_remove <- df_filt %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col))
+    dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols))
                     , dplyr::across(tidyselect::any_of(time_col))
                     ) %>%
-    dplyr::group_by(dplyr::across(tidyselect::any_of(taxa_col))) %>%
+    dplyr::group_by(dplyr::across(tidyselect::any_of(var_cols))) %>%
     dplyr::filter(!!rlang::ensym(time_col) == max(!!rlang::ensym(time_col))) %>%
     dplyr::filter(!!rlang::ensym(time_col) < max_year) %>%
     dplyr::ungroup() %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
+    dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols)))
 
 
   # summarise removes
 
-  removes <- purrr::reduce(mget(ls(pattern = "_remove$"))
-                           , dplyr::full_join
-                           , by = "taxa"
-                           ) %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(taxa_col)))
+  removes <- dplyr::bind_rows(mget(ls(pattern = "_remove$"))) %>%
+    dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols)))
 
 
   # Return
