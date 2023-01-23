@@ -9,6 +9,7 @@
 #' @param random_col Character name of column in `df` containing random factor
 #' for model. This is usually the larger of two (probably raster) grid cell
 #' sizes. Default is NULL, so no random factor in model.
+#' @param k Integer used as `k` argument of `mgcv::s`
 #' @param ... Passed to `rstanarm::stan_gamm4` (e.g. chains, iter)
 #'
 #' @return `out_file`
@@ -19,6 +20,7 @@ make_ll_model <- function(df
                           , out_file
                           , geo_col
                           , random_col = NULL
+                          , k = 6
                           , ...
                           ) {
 
@@ -46,8 +48,12 @@ make_ll_model <- function(df
       if(geos > 1) {
 
         rstanarm::stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
-                                                    , "s(year, k = 4, bs = 'ts') +"
-                                                    , "s(year, k = 4, by = "
+                                                    , "s(year, k = "
+                                                    , k
+                                                    , ", bs = 'ts') +"
+                                                    , "s(year, k = "
+                                                    , k
+                                                    , ", by = "
                                                     , geo_col
                                                     , ", bs = 'ts') + "
                                                     , geo_col
