@@ -121,7 +121,6 @@
   <span class='va'>taxa</span>,
   <span class='va'>common</span>,
   <span class='va'>mod_path</span>,
-  out_file <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/grep.html'>gsub</a></span><span class='op'>(</span><span class='st'>"\\.rds"</span>, <span class='st'>"_summary.rds"</span>, <span class='va'>mod_path</span><span class='op'>)</span>,
   <span class='va'>mod_type</span>,
   resp_var <span class='op'>=</span> <span class='st'>"prop"</span>,
   geo_var <span class='op'>=</span> <span class='st'>"IBRA_SUB_N"</span>,
@@ -149,10 +148,6 @@
     <tr>
       <th>mod_path</th>
       <td><p>Path to saved model.</p></td>
-    </tr>
-    <tr>
-      <th>out_file</th>
-      <td><p>Path to save exploration results back to.</p></td>
     </tr>
     <tr>
       <th>mod_type</th>
@@ -185,11 +180,6 @@
     <tr>
       <th>recent_year</th>
       <td><p>Time at which to predict to compare against reference_year</p></td>
-    </tr>
-    <tr>
-      <th>re_run</th>
-      <td><p>Logical. If file <code>out_file</code> already exists, should it be
-re-run?</p></td>
     </tr>
     <tr>
       <th>quant_probs</th>

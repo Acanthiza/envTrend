@@ -8,7 +8,6 @@ explore_mod(
   taxa,
   common,
   mod_path,
-  out_file = gsub("\\\\.rds", "_summary.rds", mod_path),
   mod_type,
   resp_var = "prop",
   geo_var = "IBRA_SUB_N",
@@ -29,8 +28,6 @@ explore_mod(
 
 \item{mod_path}{Path to saved model.}
 
-\item{out_file}{Path to save exploration results back to.}
-
 \item{mod_type}{Type of model (e.g. 'reporting rate', or 'occupancy')}
 
 \item{resp_var}{What is the response variable?}
@@ -46,9 +43,6 @@ explore_mod(
 \item{reference_year}{Reference time at which to predict (and compare change)}
 
 \item{recent_year}{Time at which to predict to compare against reference_year}
-
-\item{re_run}{Logical. If file \code{out_file} already exists, should it be
-re-run?}
 
 \item{quant_probs}{Quantiles for summarising.}
 }
