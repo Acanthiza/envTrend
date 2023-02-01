@@ -81,11 +81,14 @@
                         , names(mod$coefficients))
                   ) > 0
 
-    if(!resp_var %in% names(df)) df <- df %>%
-      dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
-      dplyr::summarise({{ resp_var }} := sum(.data$success) / n()) %>%
-      dplyr::ungroup()
+    if(!resp_var %in% names(df)) {
 
+      df$success <- df[,1][,1]
+      df$trials <- df[,1][,1] + df[,1][,2]
+      df$prop <- df$success / df$trials
+      df[,1] <- NULL
+
+    }
 
     # variables to explore
     var_exp <- c(resp_var
@@ -150,7 +153,7 @@
         dplyr::ungroup() %>%
         dplyr::filter(levels < max_levels)
 
-      res$y_vs_char <- ggplot2::ggplot(plot_data) +
+        res$y_vs_char <- ggplot2::ggplot(plot_data) +
         ggplot2::geom_boxplot(ggplot2::aes(x = .data$value
                                            , y = .data[[resp_var]]
                                            )
