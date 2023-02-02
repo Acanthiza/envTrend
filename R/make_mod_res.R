@@ -92,14 +92,38 @@ make_mod_res <- function(path_to_model_file
 
     pred_times <- pred_times[pred_times > 0]
 
+    filt_preds <- mod$data %>%
+      dplyr::distinct(dplyr::across(any_of(scale_name))
+                      , dplyr::across(any_of(time_col))
+                      ) %>%
+      dplyr::group_by(dplyr::across(any_of(scale_name))) %>%
+      dplyr::filter(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col)) |
+                      !!rlang::ensym(time_col) == max(!!rlang::ensym(time_col))
+                    ) %>%
+      dplyr::mutate(minmax = dplyr::if_else(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col))
+                                            , "min"
+                                            , "max"
+                                            )
+                    ) %>%
+      dplyr::ungroup() %>%
+      tidyr::pivot_wider(values_from = !!rlang::ensym(time_col)
+                         , names_from = "minmax"
+                         )
+
     pred <- mod$data %>%
       dplyr::distinct(dplyr::across(any_of(scale_name))) %>%
       dplyr::mutate(success = 0
                     , trials = 100
-                    )  %>%
+                    ) %>%
       dplyr::left_join(tibble::tibble(!!rlang::ensym(time_col) := pred_times)
                        , by = character()
                        ) %>%
+      dplyr::left_join(filt_preds) %>%
+      dplyr::group_by(dplyr::across(any_of(scale_name))) %>%
+      dplyr::filter(!!rlang::ensym(time_col) >= min
+                    , !!rlang::ensym(time_col) <= max
+                    ) %>%
+      dplyr::ungroup() %>%
       dplyr::full_join(res$list_length
                        , by = character()
                        ) %>%
@@ -134,28 +158,35 @@ make_mod_res <- function(path_to_model_file
 
     }
 
-    res$pred <- pred %>%
-      dplyr::left_join(ref_draw) %>%
-      dplyr::mutate(diff = -1 * (ref - pred)
-                    , diff_prop = pred / ref
-                    )
+    if(nrow(pred) > 0) {
 
-    res$res <- res$pred %>%
-      dplyr::group_by(dplyr::across(any_of(c(scale_name
-                                             , time_col
-                                             )
-                                           )
-                                    )
-                      , dplyr::across(contains("list_length"))
+      res$pred <- pred %>%
+        dplyr::left_join(ref_draw) %>%
+        dplyr::mutate(diff = -1 * (ref - pred)
+                      , diff_prop = pred / ref
                       ) %>%
-      dplyr::summarise(check = dplyr::n() - draws
-                       , pred = median(pred)
-                       , lower = sum(diff < 0, na.rm = TRUE) / dplyr::n()
-                       , diff = envFunc::quibble(diff, res_q, na.rm = TRUE)
-                       ) %>%
-      dplyr::ungroup() %>%
-      tidyr::unnest(cols = c(diff)) %>%
-      envFunc::add_likelihood(lower)
+        dplyr::filter(!is.na(ref))
+
+      print(path_to_model_file)
+
+      res$res <- res$pred %>%
+        dplyr::group_by(dplyr::across(any_of(c(scale_name
+                                               , time_col
+                                               )
+                                             )
+                                      )
+                        , dplyr::across(contains("list_length"))
+                        ) %>%
+        dplyr::summarise(check = dplyr::n() - draws
+                         , pred = median(pred)
+                         , lower = sum(diff < 0, na.rm = TRUE) / dplyr::n()
+                         , diff = envFunc::quibble(diff, res_q, na.rm = TRUE)
+                         ) %>%
+        dplyr::ungroup() %>%
+        tidyr::unnest(cols = c(diff)) %>%
+        add_likelihood(lower)
+
+    }
 
     res$n_data <- nrow(mod$data)
     res$n_fixed_coefs <- length(mod$coefficients[!grepl("b\\[", names(mod$coefficients))])
