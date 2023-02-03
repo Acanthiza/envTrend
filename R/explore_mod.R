@@ -584,6 +584,24 @@
 
     #------year difference df-----------
 
+    filt_preds <- df %>%
+      dplyr::distinct(dplyr::across(any_of(geo_col))
+                      , dplyr::across(any_of(time_var))
+                      ) %>%
+      dplyr::group_by(dplyr::across(any_of(geo_col))) %>%
+      dplyr::filter(!!rlang::ensym(time_var) == min(!!rlang::ensym(time_var)) |
+                      !!rlang::ensym(time_var) == max(!!rlang::ensym(time_var))
+                    ) %>%
+      dplyr::mutate(minmax = dplyr::case_when(!!rlang::ensym(time_var) == min(!!rlang::ensym(time_var)) ~ "min"
+                                            , !!rlang::ensym(time_var) == max(!!rlang::ensym(time_var)) ~ "max"
+                                            , TRUE ~ "neither"
+                                            )
+                    ) %>%
+      dplyr::ungroup() %>%
+      tidyr::pivot_wider(values_from = !!rlang::ensym(time_var)
+                         , names_from = "minmax"
+                         )
+
     res$year_diff_df <- df %>%
       dplyr::distinct(dplyr::across(tidyselect::any_of(context[!context %in% time_var]))) %>%
       dplyr::full_join(tests
@@ -598,6 +616,12 @@
                     , taxa = taxa
                     , common = common
                     ) %>%
+      dplyr::left_join(filt_preds) %>%
+      dplyr::group_by(dplyr::across(any_of(geo_col))) %>%
+      dplyr::filter(!!rlang::ensym(time_var) >= min
+                    , !!rlang::ensym(time_var) <= max
+                    ) %>%
+      dplyr::ungroup() %>%
       tidybayes::add_epred_draws(mod
                                  , ndraws = draws
                                  , re_formula = NA
@@ -615,7 +639,8 @@
                                            )
                          ) %>%
       #setNames(gsub("\\d{4}", "", names(.))) %>%
-      dplyr::mutate(diff = as.numeric(pred_recent - pred_reference))
+      dplyr::mutate(diff = as.numeric(pred_recent - pred_reference)) %>%
+      dplyr::filter(!is.na(diff))
 
 
     #-------year difference res---------
