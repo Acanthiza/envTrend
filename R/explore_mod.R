@@ -587,31 +587,28 @@
 
     #------year difference df-----------
 
-    if(limit_preds) {
-
-      filt_preds <- df %>%
-        dplyr::distinct(dplyr::across(any_of(geo_col))
-                        , dplyr::across(any_of(time_var))
-                        ) %>%
-        dplyr::group_by(dplyr::across(any_of(geo_col))) %>%
-        dplyr::filter(!!rlang::ensym(time_var) == min(!!rlang::ensym(time_var)) |
-                        !!rlang::ensym(time_var) == max(!!rlang::ensym(time_var))
+    filt_preds <- df %>%
+      dplyr::distinct(dplyr::across(any_of(geo_col))
+                      , dplyr::across(any_of(time_var))
                       ) %>%
-        dplyr::mutate(minmax = dplyr::case_when(!!rlang::ensym(time_var) == min(!!rlang::ensym(time_var)) ~ "min"
+      dplyr::group_by(dplyr::across(any_of(geo_col))) %>%
+      dplyr::filter(!!rlang::ensym(time_var) == min(!!rlang::ensym(time_var)) |
+                      !!rlang::ensym(time_var) == max(!!rlang::ensym(time_var))
+                    ) %>%
+      dplyr::mutate(minmax = dplyr::case_when(!!rlang::ensym(time_var) == min(!!rlang::ensym(time_var)) ~ "min"
                                               , !!rlang::ensym(time_var) == max(!!rlang::ensym(time_var)) ~ "max"
                                               , TRUE ~ "neither"
                                               )
-                      ) %>%
-        dplyr::ungroup() %>%
-        tidyr::pivot_wider(values_from = !!rlang::ensym(time_var)
-                           , names_from = "minmax"
-                           ) %>%
-        na.omit() %>%
-        dplyr::filter(max >= recent
-                      , min <= reference
-                      )
+                    ) %>%
+      dplyr::ungroup() %>%
+      tidyr::pivot_wider(values_from = !!rlang::ensym(time_var)
+                         , names_from = "minmax"
+                         ) %>%
+      na.omit() %>%
+      dplyr::filter(max >= recent
+                    , min <= reference
+                    )
 
-    }
 
     if(any(!limit_preds, nrow(filt_preds) > 0)) {
 
