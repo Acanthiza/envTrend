@@ -131,7 +131,8 @@
   recent_year <span class='op'>=</span> <span class='fl'>2010</span>,
   re_run <span class='op'>=</span> <span class='cn'>FALSE</span>,
   quant_probs <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.05</span>, <span class='fl'>0.5</span>, <span class='fl'>0.95</span><span class='op'>)</span>,
-  binom_denom <span class='op'>=</span> <span class='st'>"trials"</span>
+  binom_denom <span class='op'>=</span> <span class='st'>"trials"</span>,
+  limit_preds <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -184,6 +185,11 @@
     <tr>
       <th>quant_probs</th>
       <td><p>Quantiles for summarising.</p></td>
+    </tr>
+    <tr>
+      <th>limit_preds</th>
+      <td><p>Logical. Limit predictions to within contexts (<code>time_var</code>
+within <code>geo_var</code>) that exist in the data.</p></td>
     </tr>
     </table>
 

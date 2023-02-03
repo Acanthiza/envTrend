@@ -18,7 +18,8 @@ explore_mod(
   recent_year = 2010,
   re_run = FALSE,
   quant_probs = c(0.05, 0.5, 0.95),
-  binom_denom = "trials"
+  binom_denom = "trials",
+  limit_preds = TRUE
 )
 }
 \arguments{
@@ -45,6 +46,9 @@ explore_mod(
 \item{recent_year}{Time at which to predict to compare against reference_year}
 
 \item{quant_probs}{Quantiles for summarising.}
+
+\item{limit_preds}{Logical. Limit predictions to within contexts (\code{time_var}
+within \code{geo_var}) that exist in the data.}
 }
 \value{
 A list with components
