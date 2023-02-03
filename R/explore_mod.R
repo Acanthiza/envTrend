@@ -598,134 +598,142 @@
                                             )
                     ) %>%
       dplyr::ungroup() %>%
+      dplyr::filter(!!rlang::ensym(time_var) >= recent
+                    , !!rlang::ensym(time_var) <= reference
+                    ) %>%
       tidyr::pivot_wider(values_from = !!rlang::ensym(time_var)
                          , names_from = "minmax"
-                         )
-
-    res$year_diff_df <- df %>%
-      dplyr::distinct(dplyr::across(tidyselect::any_of(context[!context %in% time_var]))) %>%
-      dplyr::full_join(tests
-                       , by = character()
-                       ) %>%
-      dplyr::mutate(list_length = if(has_ll) median(exp(df$log_list_length)) else NULL
-                    , log_list_length = if(has_ll) log(list_length) else NULL
-                    , success = 0
-                    , binom_denom := 100
-                    , nCheck = nrow(tibble::as_tibble(mod))
-                    , mod_type = mod_type
-                    , taxa = taxa
-                    , common = common
-                    ) %>%
-      dplyr::left_join(filt_preds) %>%
-      dplyr::group_by(dplyr::across(any_of(geo_col))) %>%
-      dplyr::filter(!!rlang::ensym(time_var) >= min
-                    , !!rlang::ensym(time_var) <= max
-                    ) %>%
-      dplyr::ungroup() %>%
-      tidybayes::add_epred_draws(mod
-                                 , ndraws = draws
-                                 , re_formula = NA
-                                 , value = "pred"
-                                 ) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(tidyselect::any_of(context)
-                    , .data$type
-                    , .data$pred
-                    , .data$.draw
-                    ) %>%
-      tidyr::pivot_wider(names_from = "type"
-                         , values_from = c(tidyselect::any_of(time_var)
-                                           , "pred"
-                                           )
                          ) %>%
-      #setNames(gsub("\\d{4}", "", names(.))) %>%
-      dplyr::mutate(diff = as.numeric(pred_recent - pred_reference)) %>%
-      dplyr::filter(!is.na(diff))
+      na.omit()
+
+    if(nrow(filt_preds) > 0) {
+
+      res$year_diff_df <- df %>%
+        dplyr::distinct(dplyr::across(tidyselect::any_of(context[!context %in% time_var]))) %>%
+        dplyr::full_join(tests
+                         , by = character()
+                         ) %>%
+        dplyr::mutate(list_length = if(has_ll) median(exp(df$log_list_length)) else NULL
+                      , log_list_length = if(has_ll) log(list_length) else NULL
+                      , success = 0
+                      , binom_denom := 100
+                      , nCheck = nrow(tibble::as_tibble(mod))
+                      , mod_type = mod_type
+                      , taxa = taxa
+                      , common = common
+                      ) %>%
+        dplyr::left_join(filt_preds) %>%
+        dplyr::group_by(dplyr::across(any_of(geo_col))) %>%
+        dplyr::filter(!!rlang::ensym(time_var) >= min
+                      , !!rlang::ensym(time_var) <= max
+                      ) %>%
+        dplyr::ungroup() %>%
+        tidybayes::add_epred_draws(mod
+                                   , ndraws = draws
+                                   , re_formula = NA
+                                   , value = "pred"
+                                   ) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(tidyselect::any_of(context)
+                      , .data$type
+                      , .data$pred
+                      , .data$.draw
+                      ) %>%
+        tidyr::pivot_wider(names_from = "type"
+                           , values_from = c(tidyselect::any_of(time_var)
+                                             , "pred"
+                                             )
+                           ) %>%
+        #setNames(gsub("\\d{4}", "", names(.))) %>%
+        dplyr::mutate(diff = as.numeric(pred_recent - pred_reference)) %>%
+        dplyr::filter(!is.na(diff))
 
 
-    #-------year difference res---------
+      #-------year difference res---------
 
-    res$year_diff_res <- res$year_diff_df %>%
-      dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
-      dplyr::summarise(nCheck = dplyr::n()
-                       , lower = sum(diff < 0) / nCheck
-                       , higher = sum(diff > 0) / nCheck
-                       , meanDiff = mean(diff)
-                       , medianDiff = median(diff)
-                       , cilo = stats::quantile(diff, probs = 0.05)
-                       , ciup = stats::quantile(diff, probs = 0.95)
-                       , reference = unique({{ reference_year }})
-                       , recent = unique({{ recent_year }})
-                       ) %>%
-      dplyr::ungroup() %>%
-      dplyr::mutate(likelihood = purrr::map(lower
-                                     , ~cut(.
-                                            , breaks = c(0, envFunc::lulikelihood$maxVal)
-                                            , labels = envFunc::lulikelihood$likelihood
-                                            , include.lowest = TRUE
-                                            )
-                                     )
-                    ) %>%
-      tidyr::unnest(cols = c(likelihood)) %>%
-      dplyr::mutate(text = paste0(tolower(likelihood)
-                                  , " to be lower in "
-                                  , {{ geo_var }}
-                                  , " ("
-                                  , 100*round(lower,2)
-                                  , "% chance)"
-                                  )
-                    , text = gsub("in Kangaroo Island","on Kangaroo Island",text)
-                    )
-
-    #------year difference plot--------
-
-    plot_data <- res$year_diff_df %>%
-      dplyr::group_by(dplyr::across(tidyselect::any_of(geo_var))) %>%
-      dplyr::mutate(lower = sum(diff < 0) / dplyr::n()) %>%
-      dplyr::ungroup() %>%
-      dplyr::mutate(likelihood = purrr::map(lower
-                                     , ~cut(.
-                                            , breaks = c(0,envFunc::lulikelihood$maxVal)
-                                            , labels = envFunc::lulikelihood$likelihood
-                                            , include.lowest = TRUE
-                                            )
-                                     )
-                    ) %>%
-      tidyr::unnest(cols = c(likelihood)) %>%
-      dplyr::mutate(likelihood = forcats::fct_expand(likelihood
-                                                     ,levels(envFunc::lulikelihood$likelihood)
-                                                     )
-                    )
-
-    res$year_diff_plot <- ggplot2::ggplot(data = plot_data
-                                          , ggplot2::aes(.data$diff
-                                                         , .data[[geo_var]]
-                                                         , fill = .data$likelihood
-                                                         )
-                                          ) +
-      ggridges::geom_density_ridges() +
-      ggplot2::geom_vline(xintercept = 0
-                 , linetype = 2
-                 , colour = "red"
-                 ) +
-      ggplot2::scale_fill_viridis_d(drop = FALSE) +
-      ggplot2::labs(title = plot_titles
-                    , subtitle = paste0("Difference in "
-                                        , recent
-                                        , " "
-                                        , tolower(mod_type)
-                                        , " compared to "
-                                        , reference
-                                        )
-                    , x = "Difference"
-                    #, y = "IBRA Subregion"
-                    , fill = "Likelihood of decrease"
-                    , caption = paste0("Red dotted line indicates no change between "
-                                       , reference
-                                       , " and "
-                                       , recent
+      res$year_diff_res <- res$year_diff_df %>%
+        dplyr::group_by(dplyr::across(tidyselect::any_of(context))) %>%
+        dplyr::summarise(nCheck = dplyr::n()
+                         , lower = sum(diff < 0) / nCheck
+                         , higher = sum(diff > 0) / nCheck
+                         , meanDiff = mean(diff)
+                         , medianDiff = median(diff)
+                         , cilo = stats::quantile(diff, probs = 0.05)
+                         , ciup = stats::quantile(diff, probs = 0.95)
+                         , reference = unique({{ reference_year }})
+                         , recent = unique({{ recent_year }})
+                         ) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(likelihood = purrr::map(lower
+                                       , ~cut(.
+                                              , breaks = c(0, envFunc::lulikelihood$maxVal)
+                                              , labels = envFunc::lulikelihood$likelihood
+                                              , include.lowest = TRUE
+                                              )
                                        )
-                    )
+                      ) %>%
+        tidyr::unnest(cols = c(likelihood)) %>%
+        dplyr::mutate(text = paste0(tolower(likelihood)
+                                    , " to be lower in "
+                                    , {{ geo_var }}
+                                    , " ("
+                                    , 100*round(lower,2)
+                                    , "% chance)"
+                                    )
+                      , text = gsub("in Kangaroo Island","on Kangaroo Island",text)
+                      )
+
+      #------year difference plot--------
+
+      plot_data <- res$year_diff_df %>%
+        dplyr::group_by(dplyr::across(tidyselect::any_of(geo_var))) %>%
+        dplyr::mutate(lower = sum(diff < 0) / dplyr::n()) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(likelihood = purrr::map(lower
+                                       , ~cut(.
+                                              , breaks = c(0,envFunc::lulikelihood$maxVal)
+                                              , labels = envFunc::lulikelihood$likelihood
+                                              , include.lowest = TRUE
+                                              )
+                                       )
+                      ) %>%
+        tidyr::unnest(cols = c(likelihood)) %>%
+        dplyr::mutate(likelihood = forcats::fct_expand(likelihood
+                                                       ,levels(envFunc::lulikelihood$likelihood)
+                                                       )
+                      )
+
+      res$year_diff_plot <- ggplot2::ggplot(data = plot_data
+                                            , ggplot2::aes(.data$diff
+                                                           , .data[[geo_var]]
+                                                           , fill = .data$likelihood
+                                                           )
+                                            ) +
+        ggridges::geom_density_ridges() +
+        ggplot2::geom_vline(xintercept = 0
+                   , linetype = 2
+                   , colour = "red"
+                   ) +
+        ggplot2::scale_fill_viridis_d(drop = FALSE) +
+        ggplot2::labs(title = plot_titles
+                      , subtitle = paste0("Difference in "
+                                          , recent
+                                          , " "
+                                          , tolower(mod_type)
+                                          , " compared to "
+                                          , reference
+                                          )
+                      , x = "Difference"
+                      #, y = "IBRA Subregion"
+                      , fill = "Likelihood of decrease"
+                      , caption = paste0("Red dotted line indicates no change between "
+                                         , reference
+                                         , " and "
+                                         , recent
+                                         )
+                      )
+
+    }
 
     stuff <- ls() %>% grep("res", ., value = TRUE, invert = TRUE)
 
