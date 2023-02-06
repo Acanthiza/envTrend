@@ -11,7 +11,8 @@
 #' negative integer. If the former, all years will be compared to that
 #' `ref`erence. If the later, all years will be compared to themselves + `ref`.
 #' @param pred_step Numeric. What step (in units of `time_col`) to predict at?
-#' @param draws Passed to `ndraws` argument of `tidybayes::add_predicted_draws`
+#' @param draws Passed to `ndraws` argument of `tidybayes::add_predicted_draws`.
+#' Numeric or "max". Max will use all possible draws.
 #' @param list_length_q Numeric. What list lengths quantiles to predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
 #' @param do_gc Logical. Run `base::gc` after predict? On a server with shared
@@ -49,6 +50,8 @@ make_mod_res <- function(path_to_model_file
   mod <- rio::import(path_to_model_file)
 
   if("stanreg" %in% class(mod)) {
+
+    if(!is.numeric(draws)) draws <- mod$stanfit@sim$iter
 
     res <- list()
 
@@ -92,7 +95,8 @@ make_mod_res <- function(path_to_model_file
 
     pred_times <- pred_times[pred_times > 0]
 
-    filt_preds <- mod$data %>%
+    pred_at <- res$data %>%
+      dplyr::filter(success > 0) %>%
       dplyr::distinct(dplyr::across(any_of(scale_name))
                       , dplyr::across(any_of(time_col))
                       ) %>%
@@ -110,11 +114,16 @@ make_mod_res <- function(path_to_model_file
                          , names_from = "minmax"
                          ) %>%
       na.omit() %>%
-      dplyr::filter(max >= min(pred_times)
-                    , min <= max(pred_times)
+      dplyr::left_join(tibble::tibble(year = pred_times)
+                       , by = character()
+                       ) %>%
+      dplyr::group_by(!!rlang::ensym(scale_name)) %>%
+      dplyr::filter(year <= max
+                    , year >= min
                     )
 
-    if(nrow(filt_preds) > 0) {
+
+    if(nrow(pred_at) > 0) {
 
       pred <- mod$data %>%
         dplyr::distinct(dplyr::across(any_of(scale_name))) %>%
@@ -124,7 +133,7 @@ make_mod_res <- function(path_to_model_file
         dplyr::left_join(tibble::tibble(!!rlang::ensym(time_col) := pred_times)
                          , by = character()
                          ) %>%
-        dplyr::inner_join(filt_preds) %>%
+        dplyr::inner_join(pred_at) %>%
         dplyr::full_join(res$list_length
                          , by = character()
                          ) %>%
@@ -167,10 +176,7 @@ make_mod_res <- function(path_to_model_file
         dplyr::left_join(ref_draw) %>%
         dplyr::mutate(diff = -1 * (ref - pred)
                       , diff_prop = pred / ref
-                      ) %>%
-        dplyr::filter(!is.na(ref))
-
-      print(path_to_model_file)
+                      )
 
       res$res <- res$pred %>%
         dplyr::group_by(dplyr::across(any_of(c(scale_name
@@ -182,7 +188,7 @@ make_mod_res <- function(path_to_model_file
                         ) %>%
         dplyr::summarise(check = dplyr::n() - draws
                          , pred = median(pred)
-                         , lower = sum(diff < 0, na.rm = TRUE) / dplyr::n()
+                         , lower = sum(diff < 0) / dplyr::n()
                          , diff = envFunc::quibble(diff, res_q, na.rm = TRUE)
                          ) %>%
         dplyr::ungroup() %>%

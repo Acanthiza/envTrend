@@ -31,7 +31,8 @@ negative integer. If the former, all years will be compared to that
 
 \item{pred_step}{Numeric. What step (in units of \code{time_col}) to predict at?}
 
-\item{draws}{Passed to \code{ndraws} argument of \code{tidybayes::add_predicted_draws}}
+\item{draws}{Passed to \code{ndraws} argument of \code{tidybayes::add_predicted_draws}.
+Numeric or "max". Max will use all possible draws.}
 
 \item{list_length_q}{Numeric. What list lengths quantiles to predict at?}
 
