@@ -100,63 +100,66 @@ make_mod_res <- function(path_to_model_file
       dplyr::filter(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col)) |
                       !!rlang::ensym(time_col) == max(!!rlang::ensym(time_col))
                     ) %>%
-      dplyr::mutate(minmax = dplyr::if_else(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col))
-                                            , "min"
-                                            , "max"
-                                            )
+      dplyr::mutate(minmax = dplyr::case_when(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col)) ~ "min"
+                                              , !!rlang::ensym(time_col) == max(!!rlang::ensym(time_col)) ~ "max"
+                                              , TRUE ~ "neither"
+                                              )
                     ) %>%
       dplyr::ungroup() %>%
       tidyr::pivot_wider(values_from = !!rlang::ensym(time_col)
                          , names_from = "minmax"
-                         )
+                         ) %>%
+      na.omit() %>%
+      dplyr::filter(max >= min(pred_times)
+                    , min <= max(pred_times)
+                    )
 
-    pred <- mod$data %>%
-      dplyr::distinct(dplyr::across(any_of(scale_name))) %>%
-      dplyr::mutate(success = 0
-                    , trials = 100
-                    ) %>%
-      dplyr::left_join(tibble::tibble(!!rlang::ensym(time_col) := pred_times)
-                       , by = character()
-                       ) %>%
-      dplyr::left_join(filt_preds) %>%
-      dplyr::group_by(dplyr::across(any_of(scale_name))) %>%
-      dplyr::filter(!!rlang::ensym(time_col) >= min
-                    , !!rlang::ensym(time_col) <= max
-                    ) %>%
-      dplyr::ungroup() %>%
-      dplyr::full_join(res$list_length
-                       , by = character()
-                       ) %>%
-      tidybayes::add_predicted_draws(mod
-                                     , ndraws = draws
-                                     , re_formula = NA
-                                     , value = "pred"
-                                     ) %>%
-      dplyr::ungroup() %>%
-      dplyr::mutate(pred = pred / trials)
+    if(nrow(filt_preds) > 0) {
 
-    if(ref < 0) {
+      pred <- mod$data %>%
+        dplyr::distinct(dplyr::across(any_of(scale_name))) %>%
+        dplyr::mutate(success = 0
+                      , trials = 100
+                      ) %>%
+        dplyr::left_join(tibble::tibble(!!rlang::ensym(time_col) := pred_times)
+                         , by = character()
+                         ) %>%
+        dplyr::inner_join(filt_preds) %>%
+        dplyr::full_join(res$list_length
+                         , by = character()
+                         ) %>%
+        tidybayes::add_predicted_draws(mod
+                                       , ndraws = draws
+                                       , re_formula = NA
+                                       , value = "pred"
+                                       ) %>%
+        dplyr::ungroup() %>%
+        dplyr::mutate(pred = pred / trials)
 
-      ref_draw <- pred %>%
-        dplyr::mutate(year = year - ref) %>%
-        dplyr::rename(ref = pred) %>%
-        dplyr::select(tidyselect::any_of(scale_name)
-                      , tidyselect::any_of(time_col)
-                      , .draw
-                      , ref
-                      )
+      if(ref < 0) {
 
-    } else {
+        ref_draw <- pred %>%
+          dplyr::mutate(year = year - ref) %>%
+          dplyr::rename(ref = pred) %>%
+          dplyr::select(tidyselect::any_of(scale_name)
+                        , tidyselect::any_of(time_col)
+                        , .draw
+                        , ref
+                        )
 
-      ref_draw <- pred %>%
-        dplyr::filter(!!rlang::ensym(time_col) == ref) %>%
-        dplyr::select(tidyselect::any_of(scale_name)
-                      , tidyselect::matches("list_length")
-                      , .draw
-                      , ref = pred
-                      )
+      } else {
 
-    }
+        ref_draw <- pred %>%
+          dplyr::filter(!!rlang::ensym(time_col) == ref) %>%
+          dplyr::select(tidyselect::any_of(scale_name)
+                        , tidyselect::matches("list_length")
+                        , .draw
+                        , ref = pred
+                        )
+
+      }
+
+    } else pred <- tibble::tibble()
 
     if(nrow(pred) > 0) {
 
