@@ -78,6 +78,13 @@ make_mod_res <- function(path_to_model_file
 
     res$data <- mod$data
 
+    if(stats::family(mod)$family == "binomial") {
+
+      res$data$success <- mod$y[,1]
+      res$data$trials <- mod$y[,1] + mod$y[,2]
+
+    }
+
     if(!"list_length" %in% names(res$data)) {
 
       res$data$list_length <- exp(res$data$log_list_length)
