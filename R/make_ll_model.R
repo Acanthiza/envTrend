@@ -30,10 +30,13 @@ make_ll_model <- function(df
     nrow()
 
   randoms <- df %>%
-    dplyr::distinct(across(any_of(random_col))) %>%
+    dplyr::distinct(dplyr::across(tidyselect::any_of(random_col))) %>%
     nrow()
 
-  taxa_name <- gsub("\\..*$", "", basename(out_file))
+  taxa_name <- gsub("\\..*$"
+                    , ""
+                    , basename(out_file)
+                    )
 
   message(paste0("Trying to run rstanarm::stan_gamm4 for "
                  , taxa_name
@@ -44,7 +47,6 @@ make_ll_model <- function(df
 
     {
 
-      # GAM
       if(geos > 1) {
 
         rstanarm::stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
@@ -117,7 +119,20 @@ make_ll_model <- function(df
 
   if(exists("mod")) {
 
-    rio::export(mod,out_file)
+    missing_names <- setdiff(names(df), names(mod$data))
+
+    if(length(missing_names) > 0) {
+
+      mod$data <- mod$data %>%
+        dplyr::bind_cols(df %>%
+                          dplyr::select(tidyselect::any_of(missing_names))
+                        )
+
+    }
+
+    rio::export(mod
+                , out_file
+                )
 
   }
 
