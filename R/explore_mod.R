@@ -72,7 +72,8 @@
 
     mod <- rio::import(mod_path)
 
-    df <- mod$data
+    df <- mod$data %>%
+      dplyr::select(!tidyselect::matches("cbind"))
 
     #-------setup explore-------
 
