@@ -72,8 +72,20 @@
 
     mod <- rio::import(mod_path)
 
-    df <- mod$data %>%
-      dplyr::select(!tidyselect::matches("cbind"))
+    df <- mod$data
+
+    if(stats::family(mod)$family == "binomial") {
+
+      df$success <- mod$y[,1]
+      df[[binom_denom]] <- mod$y[,1] + mod$y[,2]
+
+      df <- df %>%
+        dplyr::select(!tidyselect::matches("cbind")) %>%
+        dplyr::mutate(prop = success / !!rlang::ensym(binom_denom))
+
+    }
+
+
 
     #-------setup explore-------
 
