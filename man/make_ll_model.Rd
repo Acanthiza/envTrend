@@ -4,7 +4,15 @@
 \alias{make_ll_model}
 \title{Make, and save to disk, a list-length corrected reporting rate model.}
 \usage{
-make_ll_model(df, out_file, geo_col, random_col = NULL, k = 6, ...)
+make_ll_model(
+  df,
+  out_file,
+  geo_col,
+  random_col = NULL,
+  mod_type = "glm",
+  k = if (mod_type == "gam") 6 else NULL,
+  ...
+)
 }
 \arguments{
 \item{df}{Cleaned, filtered data frame.}
@@ -18,7 +26,9 @@ context.}
 for model. This is usually the larger of two (probably raster) grid cell
 sizes. Default is NULL, so no random factor in model.}
 
-\item{k}{Integer used as \code{k} argument of \code{mgcv::s}}
+\item{mod_type}{Character. Currently "glm" or "gam".}
+
+\item{k}{Integer used as \code{k} argument of \code{mgcv::s} for use in gam.}
 
 \item{...}{Passed to \code{rstanarm::stan_gamm4} (e.g. chains, iter)}
 }

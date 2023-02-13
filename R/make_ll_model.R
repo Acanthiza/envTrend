@@ -9,7 +9,8 @@
 #' @param random_col Character name of column in `df` containing random factor
 #' for model. This is usually the larger of two (probably raster) grid cell
 #' sizes. Default is NULL, so no random factor in model.
-#' @param k Integer used as `k` argument of `mgcv::s`
+#' @param mod_type Character. Currently "glm" or "gam".
+#' @param k Integer used as `k` argument of `mgcv::s` for use in gam.
 #' @param ... Passed to `rstanarm::stan_gamm4` (e.g. chains, iter)
 #'
 #' @return `out_file`
@@ -20,7 +21,8 @@ make_ll_model <- function(df
                           , out_file
                           , geo_col
                           , random_col = NULL
-                          , k = 6
+                          , mod_type = "glm"
+                          , k = if(mod_type == "gam") 6 else NULL
                           , ...
                           ) {
 
@@ -38,76 +40,123 @@ make_ll_model <- function(df
                     , basename(out_file)
                     )
 
-  message(paste0("Trying to run rstanarm::stan_gamm4 for "
+  message(paste0("Trying to run "
+                 , mod_type
+                 , " for "
                  , taxa_name
                  )
           )
+
+  mod_func <- if(mod_type == "gam") {
+
+    rstanarm::stan_gamm4
+
+  } else if(mod_type == "glm") {
+
+    if(geos > 1) {
+
+      rstanarm::stan_glmer
+
+    } else {
+
+      rstanarm::stan_glm
+
+    }
+
+  }
+
+  mod_spec <- if(mod_type == "gam") {
+
+    if(geos > 1) {
+
+      as.formula(paste0("cbind(success,trials - success) ~ "
+                        , "s(year, k = "
+                        , k
+                        , ", bs = 'ts') +"
+                        , "s(year, k = "
+                        , k
+                        , ", by = "
+                        , geo_col
+                        , ", bs = 'ts') + "
+                        , geo_col
+                        , "+"
+                        , "log_list_length +"
+                        , geo_col
+                        , "*log_list_length"
+                        )
+                 )
+
+      } else {
+
+        as.formula(paste0("cbind(success,trials - success) ~ "
+                          , "s(year, k = 4, bs = 'ts') +"
+                          , "log_list_length"
+                          )
+                   )
+
+      }
+
+    } else {
+
+      if(mod_type == "glm") {
+
+        if(geos > 1) {
+
+          as.formula(paste0("cbind(success, trials - success) ~ year * "
+                            , geo_col
+                            , " * log_list_length"
+                            # random intercept and slope (gam does intercept only)
+                            , " + (year | "
+                            , random_col
+                            , ")"
+                            )
+                     )
+
+          } else {
+
+            as.formula(paste0("cbind(success, trials - success) ~ year * "
+                              , geo_col
+                              , " * log_list_length"
+                              )
+                       )
+
+            }
+
+        }
+
+      }
+
 
   mod <- tryCatch(
 
     {
 
-      if(geos > 1) {
+      mod_func(formula = mod_spec
+               , data = df
+               , family = stats::binomial()
+               , if(mod_type == "gam") {
 
-        rstanarm::stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
-                                                    , "s(year, k = "
-                                                    , k
-                                                    , ", bs = 'ts') +"
-                                                    , "s(year, k = "
-                                                    , k
-                                                    , ", by = "
-                                                    , geo_col
-                                                    , ", bs = 'ts') + "
-                                                    , geo_col
-                                                    , "+"
-                                                    , "log_list_length +"
-                                                    , geo_col
-                                                    , "*log_list_length"
-                                                    )
-                                             )
+                 random = if(randoms > 1) {
 
-                                  , data = df
-                                  , family = stats::binomial()
-                                  , random = if(randoms > 1) {
-
-                                    as.formula(paste0("~(1|"
-                                                      , random_col
-                                                      , ")"
-                                                      )
-                                               )
-
-                                  } else NULL
-                                  , ...
-                                  )
-
-      } else {
-
-        rstanarm::stan_gamm4(as.formula(paste0("cbind(success,trials - success) ~ "
-                                               , "s(year, k = 4, bs = 'ts') +"
-                                               , "log_list_length "
-                                               )
-                                        )
-                                  , data = df
-                                  , random = if(randoms > 1) {
-
-                                    as.formula(paste0("~(1|"
-                                            , random_col
-                                            , ")"
-                                            )
+                   # random intercept not slope (glm does random slope too)
+                   as.formula(paste0("~(1 | "
+                                     , random_col
+                                     , ")"
                                      )
+                              )
 
-                          } else NULL
-                        , family = stats::binomial()
-                        , ...
-                        )
+                   } else NULL
 
-      }
+               }
+               , ...
+               )
 
     }
 
     , error = function(cond) {
 
-      paste0("rstanarm::stan_gamm4 for "
+      paste0(mod_type
+             , " for "
              , taxa_name
              , " gave error:"
              , message(cond)

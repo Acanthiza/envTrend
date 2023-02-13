@@ -117,7 +117,15 @@
     <p>Make, and save to disk, a list-length corrected reporting rate model.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>make_ll_model</span><span class='op'>(</span><span class='va'>df</span>, <span class='va'>out_file</span>, <span class='va'>geo_col</span>, random_col <span class='op'>=</span> <span class='cn'>NULL</span>, k <span class='op'>=</span> <span class='fl'>6</span>, <span class='va'>...</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>make_ll_model</span><span class='op'>(</span>
+  <span class='va'>df</span>,
+  <span class='va'>out_file</span>,
+  <span class='va'>geo_col</span>,
+  random_col <span class='op'>=</span> <span class='cn'>NULL</span>,
+  mod_type <span class='op'>=</span> <span class='st'>"glm"</span>,
+  k <span class='op'>=</span> <span class='kw'>if</span> <span class='op'>(</span><span class='va'>mod_type</span> <span class='op'>==</span> <span class='st'>"gam"</span><span class='op'>)</span> <span class='fl'>6</span> <span class='kw'>else</span> <span class='cn'>NULL</span>,
+  <span class='va'>...</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -142,8 +150,12 @@ for model. This is usually the larger of two (probably raster) grid cell
 sizes. Default is NULL, so no random factor in model.</p></td>
     </tr>
     <tr>
+      <th>mod_type</th>
+      <td><p>Character. Currently "glm" or "gam".</p></td>
+    </tr>
+    <tr>
       <th>k</th>
-      <td><p>Integer used as <code>k</code> argument of <code><a href='https://rdrr.io/pkg/mgcv/man/s.html'>mgcv::s</a></code></p></td>
+      <td><p>Integer used as <code>k</code> argument of <code><a href='https://rdrr.io/pkg/mgcv/man/s.html'>mgcv::s</a></code> for use in gam.</p></td>
     </tr>
     <tr>
       <th>...</th>
