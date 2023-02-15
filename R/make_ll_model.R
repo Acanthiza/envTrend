@@ -53,7 +53,7 @@ make_ll_model <- function(df
 
   } else if(mod_type == "glm") {
 
-    if(geos > 1) {
+    if(randoms > 1) {
 
       rstanarm::stan_glmer
 
@@ -96,35 +96,34 @@ make_ll_model <- function(df
 
       }
 
-    } else {
+    } else if (mod_type == "glm") {
 
-      if(mod_type == "glm") {
+      if(geos > 1) {
 
-        if(geos > 1) {
+        as.formula(paste0("cbind(success, trials - success) ~ year * "
+                          , geo_col
+                          , " * log_list_length"
+                          # random intercept and slope (gam does intercept only)
+                          , if(randoms > 1) paste0(" + (year | "
+                                                   , random_col
+                                                   , ")"
+                                                   )
+                          )
+                   )
 
-          as.formula(paste0("cbind(success, trials - success) ~ year * "
-                            , geo_col
-                            , " * log_list_length"
-                            # random intercept and slope (gam does intercept only)
-                            , " + (year | "
-                            , random_col
-                            , ")"
+        } else {
+
+          as.formula(paste0("cbind(success, trials - success) ~ year * log_list_length"
+                            , if(randoms > 1) paste0(" + (year | "
+                                                     , random_col
+                                                     , ")"
+                                                     )
                             )
                      )
 
-          } else {
-
-            as.formula(paste0("cbind(success, trials - success) ~ year * "
-                              , geo_col
-                              , " * log_list_length"
-                              )
-                       )
-
-            }
-
         }
 
-      }
+      } else "cbind(success, trials - success) ~ year"
 
 
   mod <- tryCatch(
