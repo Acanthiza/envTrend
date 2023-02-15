@@ -72,25 +72,24 @@ make_ll_model <- function(df
       as.formula(paste0("cbind(success,trials - success) ~ "
                         , "s(year, k = "
                         , k
-                        , ", bs = 'ts') +"
-                        , "s(year, k = "
+                        , ", bs = 'ts') + s(year, k = "
                         , k
                         , ", by = "
                         , geo_col
                         , ", bs = 'ts') + "
                         , geo_col
-                        , "+"
-                        , "log_list_length +"
+                        , " + log_list_length + "
                         , geo_col
-                        , "*log_list_length"
+                        , " * log_list_length"
                         )
                  )
 
       } else {
 
         as.formula(paste0("cbind(success,trials - success) ~ "
-                          , "s(year, k = 4, bs = 'ts') +"
-                          , "log_list_length"
+                          , "s(year, k = "
+                          , k
+                          , ", bs = 'ts') + log_list_length"
                           )
                    )
 
