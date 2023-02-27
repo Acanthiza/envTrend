@@ -40,7 +40,9 @@
 
 
 <meta property="og:title" content="Filter occurrence data to a set of specifications — filter_list_df" />
-<meta property="og:description" content="Works on results from make_list_df. Probably works on other dfs." />
+<meta property="og:description" content="Works on results from make_list_df. Probably works on other dfs. All
+thresholds are inclusive (i.e. if max_year = 2015, taxa with records in
+2015 will not be filtered)." />
 
 
 
@@ -114,18 +116,22 @@
     </div>
 
     <div class="ref-description">
-    <p>Works on results from <code>make_list_df</code>. Probably works on other dfs.</p>
+    <p>Works on results from <code>make_list_df</code>. Probably works on other dfs. All
+thresholds are inclusive (i.e. if <code>max_year</code> = 2015, taxa with records in
+2015 will not be filtered).</p>
     </div>
 
     <pre class="usage"><span class='fu'>filter_list_df</span><span class='op'>(</span>
   <span class='va'>df</span>,
   var_cols <span class='op'>=</span> <span class='st'>"taxa"</span>,
   time_col <span class='op'>=</span> <span class='st'>"year"</span>,
+  remove_0 <span class='op'>=</span> <span class='cn'>TRUE</span>,
   shortest_max <span class='op'>=</span> <span class='fl'>3</span>,
   min_occurrences <span class='op'>=</span> <span class='fl'>5</span>,
   min_years <span class='op'>=</span> <span class='fl'>3</span>,
-  min_span <span class='op'>=</span> <span class='fl'>10</span>,
-  max_year <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/numeric.html'>as.numeric</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/format.html'>format</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Sys.time.html'>Sys.Date</a></span><span class='op'>(</span><span class='op'>)</span>, <span class='st'>"%Y"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>1</span>
+  max_year <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/numeric.html'>as.numeric</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/format.html'>format</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Sys.time.html'>Sys.Date</a></span><span class='op'>(</span><span class='op'>)</span>, <span class='st'>"%Y"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>5</span>,
+  min_year <span class='op'>=</span> <span class='va'>max_year</span> <span class='op'>-</span> <span class='fl'>10</span>,
+  max_gap <span class='op'>=</span> <span class='fl'>10</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -146,6 +152,12 @@ in the model (or will define the model; e.g. <code>taxa_col</code>)</p></td>
 <code>year</code>.</p></td>
     </tr>
     <tr>
+      <th>remove_0</th>
+      <td><p>Logical. Should success == 0 records be removed prior to
+filtering? Default (<code>TRUE</code>) assumes that any success == 0 are implied rather
+than representing true absences.</p></td>
+    </tr>
+    <tr>
       <th>shortest_max</th>
       <td><p>Minimum allowable maximum length.</p></td>
     </tr>
@@ -158,12 +170,22 @@ in the model (or will define the model; e.g. <code>taxa_col</code>)</p></td>
       <td><p>Minimum allowable years with occurrence.</p></td>
     </tr>
     <tr>
-      <th>min_span</th>
-      <td><p>Minimum allowable span between years.</p></td>
+      <th>max_year</th>
+      <td><p>Must be records greater than <code>max_year</code> (this is the minimum
+allowable maximum <code>time_col</code>).</p></td>
     </tr>
     <tr>
-      <th>max_year</th>
-      <td><p>Must be records greater than <code>max_year</code>.</p></td>
+      <th>min_year</th>
+      <td><p>Must be records less than <code>min_year</code> (this is the maximum
+allowable minimum <code>time_col</code>).</p></td>
+    </tr>
+    <tr>
+      <th>max_gap</th>
+      <td><p>Maximum gap in <code>time_col</code>.</p></td>
+    </tr>
+    <tr>
+      <th>min_span</th>
+      <td><p>Minimum allowable span between years.</p></td>
     </tr>
     </table>
 

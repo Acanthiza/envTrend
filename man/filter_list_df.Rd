@@ -8,11 +8,13 @@ filter_list_df(
   df,
   var_cols = "taxa",
   time_col = "year",
+  remove_0 = TRUE,
   shortest_max = 3,
   min_occurrences = 5,
   min_years = 3,
-  min_span = 10,
-  max_year = as.numeric(format(Sys.Date(), "\%Y")) - 1
+  max_year = as.numeric(format(Sys.Date(), "\%Y")) - 5,
+  min_year = max_year - 10,
+  max_gap = 10
 )
 }
 \arguments{
@@ -24,19 +26,31 @@ in the model (or will define the model; e.g. \code{taxa_col})}
 \item{time_col}{Character name of column in \code{df} with time variable. Usually
 \code{year}.}
 
+\item{remove_0}{Logical. Should success == 0 records be removed prior to
+filtering? Default (\code{TRUE}) assumes that any success == 0 are implied rather
+than representing true absences.}
+
 \item{shortest_max}{Minimum allowable maximum length.}
 
 \item{min_occurrences}{Minimum allowable occurrence.}
 
 \item{min_years}{Minimum allowable years with occurrence.}
 
-\item{min_span}{Minimum allowable span between years.}
+\item{max_year}{Must be records greater than \code{max_year} (this is the minimum
+allowable maximum \code{time_col}).}
 
-\item{max_year}{Must be records greater than \code{max_year}.}
+\item{min_year}{Must be records less than \code{min_year} (this is the maximum
+allowable minimum \code{time_col}).}
+
+\item{max_gap}{Maximum gap in \code{time_col}.}
+
+\item{min_span}{Minimum allowable span between years.}
 }
 \value{
 Filtered data frame.
 }
 \description{
-Works on results from \code{make_list_df}. Probably works on other dfs.
+Works on results from \code{make_list_df}. Probably works on other dfs. All
+thresholds are inclusive (i.e. if \code{max_year} = 2015, taxa with records in
+2015 will not be filtered).
 }
