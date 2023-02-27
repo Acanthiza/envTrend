@@ -12,8 +12,8 @@
 #' @param shortest_max Minimum allowable maximum length.
 #' @param min_occurrences Minimum allowable occurrence.
 #' @param min_years Minimum allowable years with occurrence.
-#' @param min_year Must be records less than `min_year`.
-#' @param max_year Much be records greater than `max_year`.
+#' @param min_span Minimum allowable span between years.
+#' @param max_year Must be records greater than `max_year`.
 #'
 #' @return Filtered data frame.
 #' @export

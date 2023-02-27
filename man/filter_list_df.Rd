@@ -30,9 +30,9 @@ in the model (or will define the model; e.g. \code{taxa_col})}
 
 \item{min_years}{Minimum allowable years with occurrence.}
 
-\item{max_year}{Much be records greater than \code{max_year}.}
+\item{min_span}{Minimum allowable span between years.}
 
-\item{min_year}{Must be records less than \code{min_year}.}
+\item{max_year}{Must be records greater than \code{max_year}.}
 }
 \value{
 Filtered data frame.
