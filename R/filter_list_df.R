@@ -17,7 +17,6 @@
 #' @param shortest_max Minimum allowable maximum length.
 #' @param min_occurrences Minimum allowable occurrence.
 #' @param min_years Minimum allowable years with occurrence.
-#' @param min_span Minimum allowable span between years.
 #' @param max_year Must be records greater than `max_year` (this is the minimum
 #' allowable maximum `time_col`).
 #' @param min_year Must be records less than `min_year` (this is the maximum
@@ -108,10 +107,18 @@ filter_list_df <- function(df
     dplyr::distinct(dplyr::across(tidyselect::any_of(var_cols))
                     , dplyr::across(tidyselect::any_of(time_col))
                     ) %>%
-    dplyr::arrange() %>%
+    dplyr::arrange(dplyr::across(tidyselect::any_of(c(var_cols, time_col)))) %>%
+    dplyr::mutate(grouping = purrr::pmap_chr(dplyr::across(!! var_cols)
+                                             , paste0
+                                             )
+                  ) %>%
     dplyr::group_by(dplyr::across(tidyselect::any_of(var_cols))) %>%
     dplyr::mutate(time = !!rlang::ensym(time_col)
-                  , gap = time - lag(time, default = min(time))
+                  , min_time = min(time)
+                  , gap = time - dplyr::lag(time
+                                            , default = min(time)
+                                            , order_by = grouping
+                                            )
                   ) %>%
     dplyr::filter(gap >= max_gap) %>%
     dplyr::ungroup() %>%

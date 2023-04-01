@@ -43,8 +43,6 @@ allowable maximum \code{time_col}).}
 allowable minimum \code{time_col}).}
 
 \item{max_gap}{Maximum gap in \code{time_col}.}
-
-\item{min_span}{Minimum allowable span between years.}
 }
 \value{
 Filtered data frame.
