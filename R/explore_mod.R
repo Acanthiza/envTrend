@@ -601,10 +601,10 @@
     #------year difference df-----------
 
     filt_preds <- df %>%
-      dplyr::distinct(dplyr::across(any_of(geo_col))
+      dplyr::distinct(dplyr::across(any_of(geo_var))
                       , dplyr::across(any_of(time_var))
                       ) %>%
-      dplyr::group_by(dplyr::across(any_of(geo_col))) %>%
+      dplyr::group_by(dplyr::across(any_of(geo_var))) %>%
       dplyr::filter(!!rlang::ensym(time_var) == min(!!rlang::ensym(time_var)) |
                       !!rlang::ensym(time_var) == max(!!rlang::ensym(time_var))
                     ) %>%
