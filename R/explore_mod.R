@@ -676,14 +676,7 @@
                            , recent = unique({{ recent_year }})
                            ) %>%
           dplyr::ungroup() %>%
-          dplyr::mutate(likelihood = purrr::map(lower
-                                         , ~cut(.
-                                                , breaks = c(0, envFunc::lulikelihood$maxVal)
-                                                , labels = envFunc::lulikelihood$likelihood
-                                                , include.lowest = TRUE
-                                                )
-                                         )
-                        ) %>%
+          envFunc::add_likelihood(col = "lower") %>%
           tidyr::unnest(cols = c(likelihood)) %>%
           dplyr::mutate(text = paste0(tolower(likelihood)
                                       , " to be lower in "

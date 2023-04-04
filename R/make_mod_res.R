@@ -11,7 +11,7 @@
 #' negative integer. If the former, all years will be compared to that
 #' `ref`erence. If the later, all years will be compared to themselves + `ref`.
 #' @param pred_step Numeric. What step (in units of `time_col`) to predict at?
-#' @param draws Passed to `ndraws` argument of `tidybayes::add_predicted_draws`.
+#' @param draws Passed to `ndraws` argument of `tidybayes::add_epred_draws`.
 #' Numeric or "max". Max will use all possible draws.
 #' @param list_length_q Numeric. What list lengths quantiles to predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
@@ -24,8 +24,9 @@
 #'   \item{list_length}{data frame of list length quantiles in original data}
 #'   \item{data}{data frame of original data retrieved from `mod$data`}
 #'   \item{pred}{data frame of predictions (via
-#'   `tidybayes::add_predicted_draws`), including a `diff` column of the
-#'   difference between `ref`erence and each `rec`ent.}
+#'   `tidybayes::add_epred_draws`), including a `diff` column of the
+#'   difference between `ref`erence and each `pred_step` from the minimum of
+#'   `time_col` to the maximum of `time_col`}
 #'   \item{res}{data frame of predictions summarised, including columns for
 #'   each of `res_q` (applied to the differences between `ref` and `rec`)}
 #'   \item{n_data}{`nrow(mod$data)`}
@@ -144,7 +145,7 @@ make_mod_res <- function(path_to_model_file
         dplyr::full_join(res$list_length
                          , by = character()
                          ) %>%
-        tidybayes::add_predicted_draws(mod
+        tidybayes::add_epred_draws(mod
                                        , ndraws = draws
                                        , re_formula = NA
                                        , value = "pred"
@@ -195,7 +196,8 @@ make_mod_res <- function(path_to_model_file
                         ) %>%
         dplyr::summarise(check = dplyr::n() - draws
                          , pred = median(pred)
-                         , lower = sum(diff < 0) / dplyr::n()
+                         , n_draws = n()
+                         , lower = sum(diff < 0) / n_draws
                          , diff = envFunc::quibble(diff, res_q, na.rm = TRUE)
                          ) %>%
         dplyr::ungroup() %>%
