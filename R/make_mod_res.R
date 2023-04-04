@@ -150,8 +150,7 @@ make_mod_res <- function(path_to_model_file
                                        , re_formula = NA
                                        , value = "pred"
                                        ) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(pred = pred / trials)
+        dplyr::ungroup()
 
       if(ref < 0) {
 
