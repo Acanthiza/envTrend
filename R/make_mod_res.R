@@ -196,7 +196,7 @@ make_mod_res <- function(path_to_model_file
                         ) %>%
         dplyr::summarise(check = dplyr::n() - draws
                          , pred = median(pred)
-                         , n_draws = n()
+                         , n_draws = dplyr::n()
                          , lower = sum(diff < 0) / n_draws
                          , diff = envFunc::quibble(diff, res_q, na.rm = TRUE)
                          ) %>%
