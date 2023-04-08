@@ -27,7 +27,6 @@ make_ll_model <- function(df
                           ) {
 
   geos <- df %>%
-    #dplyr::select(!tidyselect::any_of(unname(random_col))) %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(unname(geo_col)))) %>%
     nrow()
 
@@ -102,7 +101,6 @@ make_ll_model <- function(df
         as.formula(paste0("cbind(success, trials - success) ~ year * "
                           , geo_col
                           , " * log_list_length"
-                          # random intercept and slope (gam does intercept only)
                           , if(randoms > 1) paste0(" + (year | "
                                                    , random_col
                                                    , ")"
@@ -137,7 +135,7 @@ make_ll_model <- function(df
                  random = if(randoms > 1) {
 
                    # random intercept not slope (glm does random slope too)
-                   as.formula(paste0("~(1 | "
+                   as.formula(paste0("~ (year | "
                                      , random_col
                                      , ")"
                                      )

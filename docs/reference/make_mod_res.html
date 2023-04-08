@@ -121,12 +121,14 @@
   <span class='va'>path_to_model_file</span>,
   <span class='va'>scale_name</span>,
   time_col <span class='op'>=</span> <span class='st'>"year"</span>,
+  random_col <span class='op'>=</span> <span class='cn'>NULL</span>,
   ref <span class='op'>=</span> <span class='fl'>2000</span>,
   pred_step <span class='op'>=</span> <span class='fl'>2</span>,
   draws <span class='op'>=</span> <span class='fl'>200</span>,
   list_length_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.25</span>, <span class='fl'>0.5</span>, <span class='fl'>0.75</span><span class='op'>)</span>,
   res_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
-  do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>
+  do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  sample_new_levels_type <span class='op'>=</span> <span class='st'>"uncertainty"</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -171,7 +173,12 @@ Numeric or "max". Max will use all possible draws.</p></td>
     </tr>
     <tr>
       <th>do_gc</th>
-      <td><p>Logical. Run <code><a href='https://rdrr.io/r/base/gc.html'>base::gc</a></code> after predict? On a server with shared
+      <td><p>Logical. Run <code><a href='https://rdrr.io/r/base/gc.html'>base::gc</a></code> after predict? On a server with shared</p></td>
+    </tr>
+    <tr>
+      <th>sample_new_levels_type</th>
+      <td><p>Character. Value of the <code>sample_new_levels</code>
+argument to <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws()</a></code>.
 resources, can be necessary when summarising many, many models to prevent
 filling RAM.</p></td>
     </tr>

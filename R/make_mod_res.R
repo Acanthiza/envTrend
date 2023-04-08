@@ -16,6 +16,8 @@
 #' @param list_length_q Numeric. What list lengths quantiles to predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
 #' @param do_gc Logical. Run `base::gc` after predict? On a server with shared
+#' @param sample_new_levels_type Character. Value of the `sample_new_levels`
+#' argument to `tidybayes::add_epred_draws()`.
 #' resources, can be necessary when summarising many, many models to prevent
 #' filling RAM.
 #'
@@ -39,12 +41,14 @@
 make_mod_res <- function(path_to_model_file
                          , scale_name
                          , time_col = "year"
+                         , random_col = NULL
                          , ref = 2000
                          , pred_step = 2
                          , draws = 200
                          , list_length_q = c(0.25, 0.5, 0.75)
                          , res_q = c(0.1, 0.5, 0.9)
                          , do_gc = TRUE
+                         , sample_new_levels_type = "uncertainty"
                          ) {
 
 
@@ -54,41 +58,45 @@ make_mod_res <- function(path_to_model_file
 
     if(!is.numeric(draws)) draws <- mod$stanfit@sim$iter
 
-    res <- list()
+    res <- list(data = mod$data)
+    res$draws = draws
 
-    res$list_length <- if("list_length" %in% names(mod$data)) {
+    # Deal with list length, if needed
+    if(any(grepl("list_length", names(mod$data)))) {
 
-      envFunc::quibble(mod$data$list_length, list_length_q)
+      res$list_length <- if("list_length" %in% names(mod$data)) {
 
-    } else {
+        envFunc::quibble(mod$data$list_length, list_length_q)
 
-      envFunc::quibble(exp(mod$data$log_list_length), list_length_q)
+      } else {
+
+        envFunc::quibble(exp(mod$data$log_list_length), list_length_q)
+
+      }
+
+      res$list_length <- res$list_length %>%
+        tidyr::pivot_longer(everything()
+                            , names_to = "list_length_q"
+                            , values_to = "list_length"
+                            ) %>%
+        dplyr::mutate(log_list_length = log(list_length)
+                      , list_length_q = forcats::fct_reorder(list_length_q
+                                                             , list_length
+                                                             )
+                      )
+
+      if(!"list_length" %in% names(res$data)) {
+
+        res$data$list_length <- exp(res$data$log_list_length)
+
+      }
 
     }
-
-    res$list_length <- res$list_length %>%
-      tidyr::pivot_longer(everything()
-                          , names_to = "list_length_q"
-                          , values_to = "list_length"
-                          ) %>%
-      dplyr::mutate(log_list_length = log(list_length)
-                    , list_length_q = forcats::fct_reorder(list_length_q
-                                                           , list_length
-                                                           )
-                    )
-
-    res$data <- mod$data
 
     if(stats::family(mod)$family == "binomial") {
 
       res$data$success <- mod$y[,1]
       res$data$trials <- mod$y[,1] + mod$y[,2]
-
-    }
-
-    if(!"list_length" %in% names(res$data)) {
-
-      res$data$list_length <- exp(res$data$log_list_length)
 
     }
 
@@ -128,7 +136,8 @@ make_mod_res <- function(path_to_model_file
       dplyr::group_by(!!rlang::ensym(scale_name)) %>%
       dplyr::filter(year <= max
                     , year >= min
-                    )
+                    ) %>%
+      dplyr::select(-c(min, max))
 
 
     if(nrow(pred_at) > 0) {
@@ -138,6 +147,15 @@ make_mod_res <- function(path_to_model_file
         dplyr::mutate(success = 0
                       , trials = 100
                       ) %>%
+        {if(!is.null(random_col)) (.) %>%
+            dplyr::mutate(!!rlang::ensym(random_col) := factor(paste0(random_col
+                                                                      , paste0("_"
+                                                                               , sample_new_levels_type
+                                                                               )
+                                                                      )
+                                                               )
+                          ) else (.)
+          } %>%
         dplyr::left_join(tibble::tibble(!!rlang::ensym(time_col) := pred_times)
                          , by = character()
                          ) %>%
@@ -146,10 +164,12 @@ make_mod_res <- function(path_to_model_file
                          , by = character()
                          ) %>%
         tidybayes::add_epred_draws(mod
-                                       , ndraws = draws
-                                       , re_formula = NA
-                                       , value = "pred"
-                                       ) %>%
+                                   , re_formula = NULL
+                                   , allow.new.levels = TRUE
+                                   , ndraws = draws
+                                   , sample_new_levels = sample_new_levels_type
+                                   , value = "pred"
+                                   ) %>%
         dplyr::ungroup()
 
       if(ref < 0) {
@@ -167,7 +187,7 @@ make_mod_res <- function(path_to_model_file
 
         ref_draw <- pred %>%
           dplyr::filter(!!rlang::ensym(time_col) == ref) %>%
-          dplyr::select(tidyselect::any_of(scale_name)
+          dplyr::select(tidyselect::any_of(c(scale_name, random_col))
                         , tidyselect::matches("list_length")
                         , .draw
                         , ref = pred
@@ -188,6 +208,7 @@ make_mod_res <- function(path_to_model_file
       res$res <- res$pred %>%
         dplyr::group_by(dplyr::across(any_of(c(scale_name
                                                , time_col
+                                               , random_col
                                                )
                                              )
                                       )
@@ -206,8 +227,8 @@ make_mod_res <- function(path_to_model_file
     }
 
     res$n_data <- nrow(mod$data)
-    res$n_fixed_coefs <- length(mod$coefficients[!grepl("b\\[", names(mod$coefficients))])
-    res$n_random_coefs <- length(mod$coefficients[grepl("b\\[", names(mod$coefficients))])
+    res$n_fixed_coefs <- length(mod$coefficients[!grepl(paste0("b\\[|", random_col), names(mod$coefficients))])
+    res$n_random_coefs <- length(mod$coefficients[grepl(paste0("b\\[|", random_col), names(mod$coefficients))])
 
 
     if(do_gc) {

@@ -8,12 +8,14 @@ make_mod_res(
   path_to_model_file,
   scale_name,
   time_col = "year",
+  random_col = NULL,
   ref = 2000,
   pred_step = 2,
   draws = 200,
   list_length_q = c(0.25, 0.5, 0.75),
   res_q = c(0.1, 0.5, 0.9),
-  do_gc = TRUE
+  do_gc = TRUE,
+  sample_new_levels_type = "uncertainty"
 )
 }
 \arguments{
@@ -38,7 +40,10 @@ Numeric or "max". Max will use all possible draws.}
 
 \item{res_q}{Numeric. What quantiles to summarise predictions at?}
 
-\item{do_gc}{Logical. Run \code{base::gc} after predict? On a server with shared
+\item{do_gc}{Logical. Run \code{base::gc} after predict? On a server with shared}
+
+\item{sample_new_levels_type}{Character. Value of the \code{sample_new_levels}
+argument to \code{tidybayes::add_epred_draws()}.
 resources, can be necessary when summarising many, many models to prevent
 filling RAM.}
 }
