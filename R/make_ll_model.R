@@ -13,7 +13,7 @@
 #' @param k Integer used as `k` argument of `mgcv::s` for use in gam.
 #' @param ... Passed to `rstanarm::stan_gamm4` (e.g. chains, iter)
 #'
-#' @return `out_file`
+#' @return `out_file`. Named list containing inputs and model results as `mod`.
 #' @export
 #'
 #' @examples
@@ -26,15 +26,19 @@ make_ll_model <- function(df
                           , ...
                           ) {
 
-  geos <- df %>%
+  res <- list()
+
+  res$geos <- df %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(unname(geo_col)))) %>%
     nrow()
 
-  randoms <- df %>%
+  res$randoms <- df %>%
     dplyr::distinct(dplyr::across(tidyselect::any_of(random_col))) %>%
     nrow()
 
-  taxa_name <- gsub("\\..*$"
+  res$mod_type <- mod_type
+
+  res$taxa_name <- gsub("\\..*$"
                     , ""
                     , basename(out_file)
                     )
@@ -42,7 +46,7 @@ make_ll_model <- function(df
   message(paste0("Trying to run "
                  , mod_type
                  , " for "
-                 , taxa_name
+                 , res$taxa_name
                  )
           )
 
@@ -52,7 +56,7 @@ make_ll_model <- function(df
 
   } else if(mod_type == "glm") {
 
-    if(randoms > 1) {
+    if(res$randoms > 1) {
 
       rstanarm::stan_glmer
 
@@ -66,7 +70,7 @@ make_ll_model <- function(df
 
   mod_spec <- if(mod_type == "gam") {
 
-    if(geos > 1) {
+    if(res$geos > 1) {
 
       as.formula(paste0("cbind(success,trials - success) ~ "
                         , "s(year, k = "
@@ -96,12 +100,12 @@ make_ll_model <- function(df
 
     } else if (mod_type == "glm") {
 
-      if(geos > 1) {
+      if(res$geos > 1) {
 
         as.formula(paste0("cbind(success, trials - success) ~ year * "
                           , geo_col
                           , " * log_list_length"
-                          , if(randoms > 1) paste0(" + (year | "
+                          , if(res$randoms > 1) paste0(" + (year | "
                                                    , random_col
                                                    , ")"
                                                    )
@@ -111,7 +115,7 @@ make_ll_model <- function(df
         } else {
 
           as.formula(paste0("cbind(success, trials - success) ~ year * log_list_length"
-                            , if(randoms > 1) paste0(" + (year | "
+                            , if(res$randoms > 1) paste0(" + (year | "
                                                      , random_col
                                                      , ")"
                                                      )
@@ -132,7 +136,7 @@ make_ll_model <- function(df
                , family = stats::binomial()
                , if(mod_type == "gam") {
 
-                 random = if(randoms > 1) {
+                 random = if(res$randoms > 1) {
 
                    # random intercept not slope (glm does random slope too)
                    as.formula(paste0("~ (year | "
@@ -175,7 +179,9 @@ make_ll_model <- function(df
 
     }
 
-    rio::export(mod
+    res$mod <- mod
+
+    rio::export(res
                 , out_file
                 )
 

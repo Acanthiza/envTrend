@@ -33,7 +33,7 @@ sizes. Default is NULL, so no random factor in model.}
 \item{...}{Passed to \code{rstanarm::stan_gamm4} (e.g. chains, iter)}
 }
 \value{
-\code{out_file}
+\code{out_file}. Named list containing inputs and model results as \code{mod}.
 }
 \description{
 Make, and save to disk, a list-length corrected reporting rate model.

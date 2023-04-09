@@ -33,19 +33,19 @@ negative integer. If the former, all years will be compared to that
 
 \item{pred_step}{Numeric. What step (in units of \code{time_col}) to predict at?}
 
-\item{draws}{Passed to \code{ndraws} argument of \code{tidybayes::add_epred_draws}.
+\item{draws}{Passed to \code{ndraws} argument of \code{tidybayes::add_epred_draws()}.
 Numeric or "max". Max will use all possible draws.}
 
 \item{list_length_q}{Numeric. What list lengths quantiles to predict at?}
 
 \item{res_q}{Numeric. What quantiles to summarise predictions at?}
 
-\item{do_gc}{Logical. Run \code{base::gc} after predict? On a server with shared}
-
-\item{sample_new_levels_type}{Character. Value of the \code{sample_new_levels}
-argument to \code{tidybayes::add_epred_draws()}.
+\item{do_gc}{Logical. Run \code{base::gc} after predict? On a server with shared
 resources, can be necessary when summarising many, many models to prevent
 filling RAM.}
+
+\item{sample_new_levels_type}{Character. Value of the \code{sample_new_levels}
+argument to \code{tidybayes::add_epred_draws()}.}
 }
 \value{
 A list with components
@@ -53,7 +53,7 @@ A list with components
 \item{list_length}{data frame of list length quantiles in original data}
 \item{data}{data frame of original data retrieved from \code{mod$data}}
 \item{pred}{data frame of predictions (via
-\code{tidybayes::add_epred_draws}), including a \code{diff} column of the
+\code{tidybayes::add_epred_draws()}), including a \code{diff} column of the
 difference between \code{ref}erence and each \code{pred_step} from the minimum of
 \code{time_col} to the maximum of \code{time_col}}
 \item{res}{data frame of predictions summarised, including columns for

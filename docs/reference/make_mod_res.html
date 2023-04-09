@@ -160,7 +160,7 @@ negative integer. If the former, all years will be compared to that
     </tr>
     <tr>
       <th>draws</th>
-      <td><p>Passed to <code>ndraws</code> argument of <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws</a></code>.
+      <td><p>Passed to <code>ndraws</code> argument of <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws()</a></code>.
 Numeric or "max". Max will use all possible draws.</p></td>
     </tr>
     <tr>
@@ -173,14 +173,14 @@ Numeric or "max". Max will use all possible draws.</p></td>
     </tr>
     <tr>
       <th>do_gc</th>
-      <td><p>Logical. Run <code><a href='https://rdrr.io/r/base/gc.html'>base::gc</a></code> after predict? On a server with shared</p></td>
+      <td><p>Logical. Run <code><a href='https://rdrr.io/r/base/gc.html'>base::gc</a></code> after predict? On a server with shared
+resources, can be necessary when summarising many, many models to prevent
+filling RAM.</p></td>
     </tr>
     <tr>
       <th>sample_new_levels_type</th>
       <td><p>Character. Value of the <code>sample_new_levels</code>
-argument to <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws()</a></code>.
-resources, can be necessary when summarising many, many models to prevent
-filling RAM.</p></td>
+argument to <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws()</a></code>.</p></td>
     </tr>
     </table>
 
@@ -190,7 +190,7 @@ filling RAM.</p></td>
 <dt>list_length</dt><dd><p>data frame of list length quantiles in original data</p></dd>
 <dt>data</dt><dd><p>data frame of original data retrieved from <code>mod$data</code></p></dd>
 <dt>pred</dt><dd><p>data frame of predictions (via
-<code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws</a></code>), including a <code>diff</code> column of the
+<code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws()</a></code>), including a <code>diff</code> column of the
 difference between <code>ref</code>erence and each <code>pred_step</code> from the minimum of
 <code>time_col</code> to the maximum of <code>time_col</code></p></dd>
 <dt>res</dt><dd><p>data frame of predictions summarised, including columns for

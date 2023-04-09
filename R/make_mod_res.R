@@ -11,22 +11,22 @@
 #' negative integer. If the former, all years will be compared to that
 #' `ref`erence. If the later, all years will be compared to themselves + `ref`.
 #' @param pred_step Numeric. What step (in units of `time_col`) to predict at?
-#' @param draws Passed to `ndraws` argument of `tidybayes::add_epred_draws`.
+#' @param draws Passed to `ndraws` argument of `tidybayes::add_epred_draws()`.
 #' Numeric or "max". Max will use all possible draws.
 #' @param list_length_q Numeric. What list lengths quantiles to predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
 #' @param do_gc Logical. Run `base::gc` after predict? On a server with shared
-#' @param sample_new_levels_type Character. Value of the `sample_new_levels`
-#' argument to `tidybayes::add_epred_draws()`.
 #' resources, can be necessary when summarising many, many models to prevent
 #' filling RAM.
+#' @param sample_new_levels_type Character. Value of the `sample_new_levels`
+#' argument to `tidybayes::add_epred_draws()`.
 #'
 #' @return A list with components
 #' \describe{
 #'   \item{list_length}{data frame of list length quantiles in original data}
 #'   \item{data}{data frame of original data retrieved from `mod$data`}
 #'   \item{pred}{data frame of predictions (via
-#'   `tidybayes::add_epred_draws`), including a `diff` column of the
+#'   `tidybayes::add_epred_draws()`), including a `diff` column of the
 #'   difference between `ref`erence and each `pred_step` from the minimum of
 #'   `time_col` to the maximum of `time_col`}
 #'   \item{res}{data frame of predictions summarised, including columns for
@@ -52,7 +52,12 @@ make_mod_res <- function(path_to_model_file
                          ) {
 
 
-  mod <- rio::import(path_to_model_file)
+  model_results <- rio::import(path_to_model_file)
+
+  purrr::walk2(names(model_results)
+               , model_results
+               , assign
+               )
 
   if("stanreg" %in% class(mod)) {
 
