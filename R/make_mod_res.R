@@ -57,6 +57,7 @@ make_mod_res <- function(path_to_model_file
   purrr::walk2(names(model_results)
                , model_results
                , assign
+               , pos = 1
                )
 
   if("stanreg" %in% class(mod)) {
@@ -135,12 +136,12 @@ make_mod_res <- function(path_to_model_file
                          , names_from = "minmax"
                          ) %>%
       na.omit() %>%
-      dplyr::left_join(tibble::tibble(year = pred_times)
+      dplyr::left_join(tibble::tibble(time = pred_times)
                        , by = character()
                        ) %>%
       dplyr::group_by(!!rlang::ensym(scale_name)) %>%
-      dplyr::filter(year <= max
-                    , year >= min
+      dplyr::filter(time <= max
+                    , time >= min
                     ) %>%
       dplyr::select(-c(min, max))
 
@@ -153,15 +154,15 @@ make_mod_res <- function(path_to_model_file
                       , trials = 100
                       ) %>%
         {if(!is.null(random_col)) (.) %>%
-            dplyr::mutate(!!rlang::ensym(random_col) := factor(paste0(random_col
-                                                                      , paste0("_"
-                                                                               , sample_new_levels_type
-                                                                               )
-                                                                      )
-                                                               )
+            dplyr::mutate(rand = factor(paste0(random_col
+                                               , paste0("_"
+                                                        , sample_new_levels_type
+                                                        )
+                                               )
+                                        )
                           ) else (.)
           } %>%
-        dplyr::left_join(tibble::tibble(!!rlang::ensym(time_col) := pred_times)
+        dplyr::left_join(tibble::tibble(time := pred_times)
                          , by = character()
                          ) %>%
         dplyr::inner_join(pred_at) %>%
@@ -180,7 +181,7 @@ make_mod_res <- function(path_to_model_file
       if(ref < 0) {
 
         ref_draw <- pred %>%
-          dplyr::mutate(year = year - ref) %>%
+          dplyr::mutate(time = time - ref) %>%
           dplyr::rename(ref = pred) %>%
           dplyr::select(tidyselect::any_of(scale_name)
                         , tidyselect::any_of(time_col)

@@ -120,7 +120,8 @@
     <pre class="usage"><span class='fu'>make_ll_model</span><span class='op'>(</span>
   <span class='va'>df</span>,
   <span class='va'>out_file</span>,
-  <span class='va'>geo_col</span>,
+  time_col <span class='op'>=</span> <span class='st'>"year"</span>,
+  geo_col <span class='op'>=</span> <span class='st'>"geo"</span>,
   random_col <span class='op'>=</span> <span class='cn'>NULL</span>,
   mod_type <span class='op'>=</span> <span class='st'>"glm"</span>,
   k <span class='op'>=</span> <span class='kw'>if</span> <span class='op'>(</span><span class='va'>mod_type</span> <span class='op'>==</span> <span class='st'>"gam"</span><span class='op'>)</span> <span class='fl'>6</span> <span class='kw'>else</span> <span class='cn'>NULL</span>,

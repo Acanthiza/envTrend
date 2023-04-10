@@ -7,7 +7,8 @@
 make_ll_model(
   df,
   out_file,
-  geo_col,
+  time_col = "year",
+  geo_col = "geo",
   random_col = NULL,
   mod_type = "glm",
   k = if (mod_type == "gam") 6 else NULL,

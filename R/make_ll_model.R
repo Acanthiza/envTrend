@@ -19,7 +19,8 @@
 #' @examples
 make_ll_model <- function(df
                           , out_file
-                          , geo_col
+                          , time_col = "year"
+                          , geo_col = "geo"
                           , random_col = NULL
                           , mod_type = "glm"
                           , k = if(mod_type == "gam") 6 else NULL
@@ -28,25 +29,27 @@ make_ll_model <- function(df
 
   res <- list()
 
-  res$geos <- df %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(unname(geo_col)))) %>%
+  if(!is.null(time_col)) df["time"] <- df[time_col]
+  if(!is.null(geo_col)) df["geo"] <- df[geo_col]
+  if(!is.null(random_col)) df["rand"] <- df[random_col]
+
+  geos <- df %>%
+    dplyr::distinct(geo) %>%
     nrow()
 
-  res$randoms <- df %>%
-    dplyr::distinct(dplyr::across(tidyselect::any_of(random_col))) %>%
-    nrow()
+  if(!is.null(random_col)) {
 
-  res$mod_type <- mod_type
+    randoms <- df %>%
+      dplyr::distinct(rand) %>%
+      nrow()
 
-  res$taxa_name <- gsub("\\..*$"
-                    , ""
-                    , basename(out_file)
-                    )
+  } else randoms <- 0
+
 
   message(paste0("Trying to run "
                  , mod_type
                  , " for "
-                 , res$taxa_name
+                 , gsub("\\.rds", "", basename(out_file))
                  )
           )
 
@@ -56,7 +59,7 @@ make_ll_model <- function(df
 
   } else if(mod_type == "glm") {
 
-    if(res$randoms > 1) {
+    if(randoms > 1) {
 
       rstanarm::stan_glmer
 
@@ -70,27 +73,21 @@ make_ll_model <- function(df
 
   mod_spec <- if(mod_type == "gam") {
 
-    if(res$geos > 1) {
+    if(geos > 1) {
 
       as.formula(paste0("cbind(success,trials - success) ~ "
-                        , "s(year, k = "
+                        , "s(time, k = "
                         , k
-                        , ", bs = 'ts') + s(year, k = "
+                        , ", bs = 'ts') + s(time, k = "
                         , k
-                        , ", by = "
-                        , geo_col
-                        , ", bs = 'ts') + "
-                        , geo_col
-                        , " + log_list_length + "
-                        , geo_col
-                        , " * log_list_length"
+                        , ", by = geo, bs = 'ts') + geo + log_list_length + geo * log_list_length"
                         )
                  )
 
       } else {
 
         as.formula(paste0("cbind(success,trials - success) ~ "
-                          , "s(year, k = "
+                          , "s(time, k = "
                           , k
                           , ", bs = 'ts') + log_list_length"
                           )
@@ -100,56 +97,69 @@ make_ll_model <- function(df
 
     } else if (mod_type == "glm") {
 
-      if(res$geos > 1) {
+      if(geos > 1) {
 
-        as.formula(paste0("cbind(success, trials - success) ~ year * "
-                          , geo_col
-                          , " * log_list_length"
-                          , if(res$randoms > 1) paste0(" + (year | "
-                                                   , random_col
-                                                   , ")"
-                                                   )
-                          )
-                   )
+        if(randoms > 1) {
+
+          cbind(success, trials - success) ~ year * geo * log_list_length + (time | rand)
 
         } else {
 
-          as.formula(paste0("cbind(success, trials - success) ~ year * log_list_length"
-                            , if(res$randoms > 1) paste0(" + (year | "
-                                                     , random_col
-                                                     , ")"
-                                                     )
-                            )
-                     )
+          cbind(success, trials - success) ~ year * geo * log_list_length
 
         }
 
-      } else "cbind(success, trials - success) ~ year"
+      } else {
+
+        if(randoms > 1) {
+
+          cbind(success, trials - success) ~ year * log_list_length + (time | rand)
+
+        } else {
+
+          cbind(success, trials - success) ~ year * log_list_length
+
+        }
+
+      }
+
+    } else "cbind(success, trials - success) ~ year"
 
 
   mod <- tryCatch(
 
     {
 
-      mod_func(formula = mod_spec
-               , data = df
-               , family = stats::binomial()
-               , if(mod_type == "gam") {
+      if(mod_type == "gam") {
 
-                 random = if(res$randoms > 1) {
+        if(randoms > 1) {
 
-                   # random intercept not slope (glm does random slope too)
-                   as.formula(paste0("~ (year | "
-                                     , random_col
-                                     , ")"
-                                     )
-                              )
+          mod_func(formula = mod_spec
+                   , data = df
+                   , family = stats::binomial()
+                   , random = ~ (time | rand)
+                   , ...
+                   )
 
-                   } else NULL
+        } else {
 
-               }
-               , ...
-               )
+          mod_func(formula = mod_spec
+                   , data = df
+                   , family = stats::binomial()
+                   , ...
+                   )
+
+        }
+
+      } else if(mod_type == "glm") {
+
+        mod_func(formula = mod_spec
+                 , data = df
+                 , family = stats::binomial()
+                 , ...
+                 )
+
+      }
 
     }
 
@@ -178,6 +188,12 @@ make_ll_model <- function(df
                         )
 
     }
+
+    res$random_col <- random_col
+    res$randoms <- randoms
+
+    res$geo_col <- geo_col
+    res$geos <- geos
 
     res$mod <- mod
 
