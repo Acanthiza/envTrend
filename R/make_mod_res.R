@@ -4,7 +4,7 @@
 #'
 #' @param path_to_model_file Character. Path to saved results from
 #' `make_ll_model`
-#' @param scale_name Character. Name of column in original data with spatial
+#' @param geo_col Character. Name of column in original data with spatial
 #' data.
 #' @param time_col Character. Name of column in original data with time data.
 #' @param ref Numeric. Either a reference year (or other time point) or a
@@ -39,7 +39,7 @@
 #'
 #' @examples
 make_mod_res <- function(path_to_model_file
-                         , scale_name
+                         , geo_col
                          , time_col = "year"
                          , random_col = NULL
                          , ref = 2000
@@ -119,10 +119,10 @@ make_mod_res <- function(path_to_model_file
 
     pred_at <- res$data %>%
       dplyr::filter(success > 0) %>%
-      dplyr::distinct(dplyr::across(any_of(scale_name))
+      dplyr::distinct(dplyr::across(any_of(geo_col))
                       , dplyr::across(any_of(time_col))
                       ) %>%
-      dplyr::group_by(dplyr::across(any_of(scale_name))) %>%
+      dplyr::group_by(dplyr::across(any_of(geo_col))) %>%
       dplyr::filter(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col)) |
                       !!rlang::ensym(time_col) == max(!!rlang::ensym(time_col))
                     ) %>%
@@ -136,33 +136,38 @@ make_mod_res <- function(path_to_model_file
                          , names_from = "minmax"
                          ) %>%
       na.omit() %>%
-      dplyr::left_join(tibble::tibble(time = pred_times)
+      dplyr::left_join(tibble::tibble(!!rlang::ensym(time_col) := pred_times)
                        , by = character()
                        ) %>%
-      dplyr::group_by(!!rlang::ensym(scale_name)) %>%
-      dplyr::filter(time <= max
-                    , time >= min
+      dplyr::group_by(!!rlang::ensym(geo_col)) %>%
+      dplyr::filter(!!rlang::ensym(time_col) <= max
+                    , !!rlang::ensym(time_col) >= min
                     ) %>%
-      dplyr::select(-c(min, max))
+      dplyr::select(-c(min, max)) %>%
+      {if(!is.null(random_col)) (.) %>%
+          dplyr::mutate(!!rlang::ensym(random_col) := factor(paste0(random_col
+                                                                   , paste0("_"
+                                                                            , sample_new_levels_type
+                                                                            )
+                                                                   )
+                                                            )
+                        ) else (.)
+      }
+
+
+    if(!is.null(time_col)) pred_at["time"] <- pred_at[time_col]
+    if(!is.null(geo_col)) pred_at["geo"] <- pred_at[geo_col]
+    if(!is.null(random_col)) pred_at["rand"] <- pred_at[random_col]
 
 
     if(nrow(pred_at) > 0) {
 
       pred <- mod$data %>%
-        dplyr::distinct(dplyr::across(any_of(scale_name))) %>%
+        dplyr::distinct(dplyr::across(any_of(geo_col))) %>%
         dplyr::mutate(success = 0
                       , trials = 100
                       ) %>%
-        {if(!is.null(random_col)) (.) %>%
-            dplyr::mutate(rand = factor(paste0(random_col
-                                               , paste0("_"
-                                                        , sample_new_levels_type
-                                                        )
-                                               )
-                                        )
-                          ) else (.)
-          } %>%
-        dplyr::left_join(tibble::tibble(time := pred_times)
+        dplyr::left_join(tibble::tibble(year := pred_times)
                          , by = character()
                          ) %>%
         dplyr::inner_join(pred_at) %>%
@@ -183,8 +188,7 @@ make_mod_res <- function(path_to_model_file
         ref_draw <- pred %>%
           dplyr::mutate(time = time - ref) %>%
           dplyr::rename(ref = pred) %>%
-          dplyr::select(tidyselect::any_of(scale_name)
-                        , tidyselect::any_of(time_col)
+          dplyr::select(tidyselect::any_of(c(geo_col, random_col))
                         , .draw
                         , ref
                         )
@@ -192,8 +196,8 @@ make_mod_res <- function(path_to_model_file
       } else {
 
         ref_draw <- pred %>%
-          dplyr::filter(!!rlang::ensym(time_col) == ref) %>%
-          dplyr::select(tidyselect::any_of(c(scale_name, random_col))
+          dplyr::filter(time == ref) %>%
+          dplyr::select(tidyselect::any_of(c(geo_col, random_col))
                         , tidyselect::matches("list_length")
                         , .draw
                         , ref = pred
@@ -212,9 +216,9 @@ make_mod_res <- function(path_to_model_file
                       )
 
       res$res <- res$pred %>%
-        dplyr::group_by(dplyr::across(any_of(c(scale_name
-                                               , time_col
+        dplyr::group_by(dplyr::across(any_of(c(geo_col
                                                , random_col
+                                               , time_col
                                                )
                                              )
                                       )

@@ -195,6 +195,8 @@ make_ll_model <- function(df
     res$geo_col <- geo_col
     res$geos <- geos
 
+    res$time_col <- time_col
+
     res$mod <- mod
 
     rio::export(res

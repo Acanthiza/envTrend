@@ -6,7 +6,7 @@
 \usage{
 make_mod_res(
   path_to_model_file,
-  scale_name,
+  geo_col,
   time_col = "year",
   random_col = NULL,
   ref = 2000,
@@ -22,7 +22,7 @@ make_mod_res(
 \item{path_to_model_file}{Character. Path to saved results from
 \code{make_ll_model}}
 
-\item{scale_name}{Character. Name of column in original data with spatial
+\item{geo_col}{Character. Name of column in original data with spatial
 data.}
 
 \item{time_col}{Character. Name of column in original data with time data.}
