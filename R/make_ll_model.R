@@ -4,11 +4,16 @@
 #'
 #' @param df Cleaned, filtered data frame.
 #' @param out_file Path to file where model results are/will be saved.
-#' @param geo_col Character name of columns in `df` containing geographic
-#' context.
+#' @param var_col Chraacter name of column in `df` containing main `x` variable.
+#' @param cat_col Character name of column in `df` containing categorical data.
+#' @param cov_col Character name of column in `df` containing secondary `x`
+#' variable.
 #' @param random_col Character name of column in `df` containing random factor
-#' for model. This is usually the larger of two (probably raster) grid cell
-#' sizes. Default is NULL, so no random factor in model.
+#' for model. Default is NULL, so no random factor in model.
+#' @param log_cov Logical. Use `cov_col` (`T`) or the log of `cov_col` (`F`) in
+#' model specification.
+#' @param rand_slope Logical. Should a random slope effect be included in the
+#' model as well as any random intercept?
 #' @param mod_type Character. Currently "glm" or "gam".
 #' @param k Integer used as `k` argument of `mgcv::s` for use in gam.
 #' @param ... Passed to `rstanarm::stan_gamm4` (e.g. chains, iter)
@@ -18,40 +23,57 @@
 #'
 #' @examples
 make_ll_model <- function(df
-                          , out_file
-                          , time_col = "year"
-                          , geo_col = "geo"
+                          , mod_file
+                          , var_col = "year"
+                          , cat_col = "geo"
+                          , cov_col = "list_length"
                           , random_col = NULL
+                          , log_cov = TRUE
+                          , rand_slope = TRUE
                           , mod_type = "glm"
                           , k = if(mod_type == "gam") 6 else NULL
                           , ...
                           ) {
 
-  res <- list()
+  res <- c(as.list(environment()), list(...))
 
-  if(!is.null(time_col)) df["time"] <- df[time_col]
-  if(!is.null(geo_col)) df["geo"] <- df[geo_col]
+  res$data <- df
+  res$df <- NULL
+
+  if(!is.null(var_col)) df["var"] <- df[var_col]
+  if(!is.null(cat_col)) df["cat"] <- df[cat_col]
   if(!is.null(random_col)) df["rand"] <- df[random_col]
 
-  geos <- df %>%
-    dplyr::distinct(geo) %>%
+  if(!is.null(cov_col)) {
+
+    df["cov"] <- df[cov_col]
+    df["log_cov"] <- log(df$cov)
+
+  }
+
+  df["use_cov"] <- if(log_cov) df$log_cov else df$cov
+
+  cats <- df %>%
+    dplyr::distinct(cat) %>%
     nrow()
 
-  if(!is.null(random_col)) {
+  randoms <- if(!is.null(random_col)) {
 
-    randoms <- df %>%
+    df %>%
       dplyr::distinct(rand) %>%
       nrow()
 
-  } else randoms <- 0
+  } else 0
 
 
   message(paste0("Trying to run "
                  , mod_type
                  , " for "
-                 , gsub("\\.rds", "", basename(out_file))
+                 , gsub("\\.rds", "", basename(mod_file))
                  )
           )
+
+  # mod func------
 
   mod_func <- if(mod_type == "gam") {
 
@@ -73,39 +95,51 @@ make_ll_model <- function(df
 
   mod_spec <- if(mod_type == "gam") {
 
-    if(geos > 1) {
+    # gam spec-------
 
-      as.formula(paste0("cbind(success,trials - success) ~ "
-                        , "s(time, k = "
+    if(cats > 1) {
+
+      as.formula(paste0("cbind(success, trials - success) ~ "
+                        , "s(var, k = "
                         , k
-                        , ", bs = 'ts') + s(time, k = "
+                        , ", bs = 'ts') + s(var, k = "
                         , k
-                        , ", by = geo, bs = 'ts') + geo + log_list_length + geo * log_list_length"
+                        , ", by = cat, bs = 'ts') + cat + use_cov + cat * use_cov"
                         )
                  )
 
       } else {
 
-        as.formula(paste0("cbind(success,trials - success) ~ "
-                          , "s(time, k = "
+        as.formula(paste0("cbind(success, trials - success) ~ "
+                          , "s(var, k = "
                           , k
-                          , ", bs = 'ts') + log_list_length"
+                          , ", bs = 'ts') + use_cov"
                           )
                    )
 
       }
 
+    # glm spec-------
+
     } else if (mod_type == "glm") {
 
-      if(geos > 1) {
+      if(cats > 1) {
 
         if(randoms > 1) {
 
-          cbind(success, trials - success) ~ year * geo * log_list_length + (time | rand)
+          if(rand_slope) {
+
+            cbind(success, trials - success) ~ var * cat * use_cov + (var | rand)
+
+          } else {
+
+            cbind(success, trials - success) ~ var * cat * use_cov + (1 | rand)
+
+          }
 
         } else {
 
-          cbind(success, trials - success) ~ year * geo * log_list_length
+          cbind(success, trials - success) ~ var * cat * use_cov
 
         }
 
@@ -113,18 +147,28 @@ make_ll_model <- function(df
 
         if(randoms > 1) {
 
-          cbind(success, trials - success) ~ year * log_list_length + (time | rand)
+          if(rand_slope) {
+
+            cbind(success, trials - success) ~ var * use_cov + (var | rand)
+
+          } else {
+
+            cbind(success, trials - success) ~ var * use_cov + (1 | rand)
+
+          }
 
         } else {
 
-          cbind(success, trials - success) ~ year * log_list_length
+          cbind(success, trials - success) ~ var * use_cov
 
         }
 
       }
 
-    } else "cbind(success, trials - success) ~ year"
+    } else cbind(success, trials - success) ~ var
 
+
+  # mod-----
 
   mod <- tryCatch(
 
@@ -134,12 +178,25 @@ make_ll_model <- function(df
 
         if(randoms > 1) {
 
-          mod_func(formula = mod_spec
-                   , data = df
-                   , family = stats::binomial()
-                   , random = ~ (time | rand)
-                   , ...
-                   )
+          if(rand_slope) {
+
+            mod_func(formula = mod_spec
+                     , data = df
+                     , family = stats::binomial()
+                     , random = ~ (var | rand)
+                     , ...
+                     )
+
+          } else {
+
+            mod_func(formula = mod_spec
+                     , data = df
+                     , family = stats::binomial()
+                     , random = ~ (1 | rand)
+                     , ...
+                     )
+
+          }
 
         } else {
 
@@ -167,7 +224,7 @@ make_ll_model <- function(df
 
       paste0(mod_type
              , " for "
-             , taxa_name
+             , gsub("\\.rds", "", mod_file)
              , " gave error:"
              , message(cond)
              )
@@ -175,6 +232,9 @@ make_ll_model <- function(df
     }
 
   )
+
+
+  # capture missing variables ------
 
   if(exists("mod")) {
 
@@ -189,21 +249,19 @@ make_ll_model <- function(df
 
     }
 
-    res$random_col <- random_col
+    # finalise res-------
+
     res$randoms <- randoms
-
-    res$geo_col <- geo_col
-    res$geos <- geos
-
-    res$time_col <- time_col
-
+    res$cats <- cats
     res$mod <- mod
 
     rio::export(res
-                , out_file
+                , mod_file
                 )
 
   }
+
+  # clean up -------
 
   rm(list = ls())
 

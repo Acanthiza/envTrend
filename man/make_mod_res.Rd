@@ -5,47 +5,33 @@
 \title{Summarise results from \code{make_ll_model}}
 \usage{
 make_mod_res(
-  path_to_model_file,
-  geo_col,
-  time_col = "year",
-  random_col = NULL,
-  ref = 2000,
+  mod_file,
+  ref = -20,
   pred_step = 2,
-  draws = 200,
-  list_length_q = c(0.25, 0.5, 0.75),
+  cov_q = c(0.5),
   res_q = c(0.1, 0.5, 0.9),
   do_gc = TRUE,
-  sample_new_levels_type = "uncertainty"
+  ...
 )
 }
 \arguments{
-\item{path_to_model_file}{Character. Path to saved results from
-\code{make_ll_model}}
+\item{mod_file}{Character. Path to saved results from \code{make_ll_model}}
 
-\item{geo_col}{Character. Name of column in original data with spatial
-data.}
+\item{ref}{Numeric. Single value of \code{var_col} from \code{make_ll_model} to use as
+a reference value or a negative integer to compare all values of \code{var_col}
+against \code{var_col + ref}.}
 
-\item{time_col}{Character. Name of column in original data with time data.}
+\item{pred_step}{Numeric. What step (in units of \code{var_col}) to predict at?}
 
-\item{ref}{Numeric. Either a reference year (or other time point) or a
-negative integer. If the former, all years will be compared to that
-\code{ref}erence. If the later, all years will be compared to themselves + \code{ref}.}
-
-\item{pred_step}{Numeric. What step (in units of \code{time_col}) to predict at?}
-
-\item{draws}{Passed to \code{ndraws} argument of \code{tidybayes::add_epred_draws()}.
-Numeric or "max". Max will use all possible draws.}
-
-\item{list_length_q}{Numeric. What list lengths quantiles to predict at?}
+\item{cov_q}{Numeric. What list lengths quantiles to predict at?}
 
 \item{res_q}{Numeric. What quantiles to summarise predictions at?}
 
 \item{do_gc}{Logical. Run \code{base::gc} after predict? On a server with shared
 resources, can be necessary when summarising many, many models to prevent
-filling RAM.}
+RAM issues.}
 
-\item{sample_new_levels_type}{Character. Value of the \code{sample_new_levels}
-argument to \code{tidybayes::add_epred_draws()}.}
+\item{...}{Passed to \code{tidybayes::add_epred_draws()}}
 }
 \value{
 A list with components
@@ -55,7 +41,7 @@ A list with components
 \item{pred}{data frame of predictions (via
 \code{tidybayes::add_epred_draws()}), including a \code{diff} column of the
 difference between \code{ref}erence and each \code{pred_step} from the minimum of
-\code{time_col} to the maximum of \code{time_col}}
+\code{var_col} to the maximum of \code{var_col}}
 \item{res}{data frame of predictions summarised, including columns for
 each of \code{res_q} (applied to the differences between \code{ref} and \code{rec})}
 \item{n_data}{\code{nrow(mod$data)}}

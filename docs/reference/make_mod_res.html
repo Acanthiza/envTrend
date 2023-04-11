@@ -118,53 +118,34 @@
     </div>
 
     <pre class="usage"><span class='fu'>make_mod_res</span><span class='op'>(</span>
-  <span class='va'>path_to_model_file</span>,
-  <span class='va'>geo_col</span>,
-  time_col <span class='op'>=</span> <span class='st'>"year"</span>,
-  random_col <span class='op'>=</span> <span class='cn'>NULL</span>,
-  ref <span class='op'>=</span> <span class='fl'>2000</span>,
+  <span class='va'>mod_file</span>,
+  ref <span class='op'>=</span> <span class='op'>-</span><span class='fl'>20</span>,
   pred_step <span class='op'>=</span> <span class='fl'>2</span>,
-  draws <span class='op'>=</span> <span class='fl'>200</span>,
-  list_length_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.25</span>, <span class='fl'>0.5</span>, <span class='fl'>0.75</span><span class='op'>)</span>,
+  cov_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.5</span><span class='op'>)</span>,
   res_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
   do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  sample_new_levels_type <span class='op'>=</span> <span class='st'>"uncertainty"</span>
+  <span class='va'>...</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>path_to_model_file</th>
-      <td><p>Character. Path to saved results from
-<code>make_ll_model</code></p></td>
-    </tr>
-    <tr>
-      <th>geo_col</th>
-      <td><p>Character. Name of column in original data with spatial
-data.</p></td>
-    </tr>
-    <tr>
-      <th>time_col</th>
-      <td><p>Character. Name of column in original data with time data.</p></td>
+      <th>mod_file</th>
+      <td><p>Character. Path to saved results from <code>make_ll_model</code></p></td>
     </tr>
     <tr>
       <th>ref</th>
-      <td><p>Numeric. Either a reference year (or other time point) or a
-negative integer. If the former, all years will be compared to that
-<code>ref</code>erence. If the later, all years will be compared to themselves + <code>ref</code>.</p></td>
+      <td><p>Numeric. Single value of <code>var_col</code> from <code>make_ll_model</code> to use as
+a reference value or a negative integer to compare all values of <code>var_col</code>
+against <code>var_col + ref</code>.</p></td>
     </tr>
     <tr>
       <th>pred_step</th>
-      <td><p>Numeric. What step (in units of <code>time_col</code>) to predict at?</p></td>
+      <td><p>Numeric. What step (in units of <code>var_col</code>) to predict at?</p></td>
     </tr>
     <tr>
-      <th>draws</th>
-      <td><p>Passed to <code>ndraws</code> argument of <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws()</a></code>.
-Numeric or "max". Max will use all possible draws.</p></td>
-    </tr>
-    <tr>
-      <th>list_length_q</th>
+      <th>cov_q</th>
       <td><p>Numeric. What list lengths quantiles to predict at?</p></td>
     </tr>
     <tr>
@@ -175,12 +156,11 @@ Numeric or "max". Max will use all possible draws.</p></td>
       <th>do_gc</th>
       <td><p>Logical. Run <code><a href='https://rdrr.io/r/base/gc.html'>base::gc</a></code> after predict? On a server with shared
 resources, can be necessary when summarising many, many models to prevent
-filling RAM.</p></td>
+RAM issues.</p></td>
     </tr>
     <tr>
-      <th>sample_new_levels_type</th>
-      <td><p>Character. Value of the <code>sample_new_levels</code>
-argument to <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws()</a></code>.</p></td>
+      <th>...</th>
+      <td><p>Passed to <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws()</a></code></p></td>
     </tr>
     </table>
 
@@ -192,7 +172,7 @@ argument to <code><a href='http://mjskay.github.io/tidybayes/reference/add_predi
 <dt>pred</dt><dd><p>data frame of predictions (via
 <code><a href='http://mjskay.github.io/tidybayes/reference/add_predicted_draws.html'>tidybayes::add_epred_draws()</a></code>), including a <code>diff</code> column of the
 difference between <code>ref</code>erence and each <code>pred_step</code> from the minimum of
-<code>time_col</code> to the maximum of <code>time_col</code></p></dd>
+<code>var_col</code> to the maximum of <code>var_col</code></p></dd>
 <dt>res</dt><dd><p>data frame of predictions summarised, including columns for
 each of <code>res_q</code> (applied to the differences between <code>ref</code> and <code>rec</code>)</p></dd>
 <dt>n_data</dt><dd><p><code>nrow(mod$data)</code></p></dd>

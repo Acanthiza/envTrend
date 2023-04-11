@@ -119,10 +119,13 @@
 
     <pre class="usage"><span class='fu'>make_ll_model</span><span class='op'>(</span>
   <span class='va'>df</span>,
-  <span class='va'>out_file</span>,
-  time_col <span class='op'>=</span> <span class='st'>"year"</span>,
-  geo_col <span class='op'>=</span> <span class='st'>"geo"</span>,
+  <span class='va'>mod_file</span>,
+  var_col <span class='op'>=</span> <span class='st'>"year"</span>,
+  cat_col <span class='op'>=</span> <span class='st'>"geo"</span>,
+  cov_col <span class='op'>=</span> <span class='st'>"list_length"</span>,
   random_col <span class='op'>=</span> <span class='cn'>NULL</span>,
+  log_cov <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  rand_slope <span class='op'>=</span> <span class='cn'>TRUE</span>,
   mod_type <span class='op'>=</span> <span class='st'>"glm"</span>,
   k <span class='op'>=</span> <span class='kw'>if</span> <span class='op'>(</span><span class='va'>mod_type</span> <span class='op'>==</span> <span class='st'>"gam"</span><span class='op'>)</span> <span class='fl'>6</span> <span class='kw'>else</span> <span class='cn'>NULL</span>,
   <span class='va'>...</span>
@@ -136,19 +139,32 @@
       <td><p>Cleaned, filtered data frame.</p></td>
     </tr>
     <tr>
-      <th>out_file</th>
-      <td><p>Path to file where model results are/will be saved.</p></td>
+      <th>var_col</th>
+      <td><p>Chraacter name of column in <code>df</code> containing main <code>x</code> variable.</p></td>
     </tr>
     <tr>
-      <th>geo_col</th>
-      <td><p>Character name of columns in <code>df</code> containing geographic
-context.</p></td>
+      <th>cat_col</th>
+      <td><p>Character name of column in <code>df</code> containing categorical data.</p></td>
+    </tr>
+    <tr>
+      <th>cov_col</th>
+      <td><p>Character name of column in <code>df</code> containing secondary <code>x</code>
+variable.</p></td>
     </tr>
     <tr>
       <th>random_col</th>
       <td><p>Character name of column in <code>df</code> containing random factor
-for model. This is usually the larger of two (probably raster) grid cell
-sizes. Default is NULL, so no random factor in model.</p></td>
+for model. Default is NULL, so no random factor in model.</p></td>
+    </tr>
+    <tr>
+      <th>log_cov</th>
+      <td><p>Logical. Use <code>cov_col</code> (<code>T</code>) or the log of <code>cov_col</code> (<code>F</code>) in
+model specification.</p></td>
+    </tr>
+    <tr>
+      <th>rand_slope</th>
+      <td><p>Logical. Should a random slope effect be included in the
+model as well as any random intercept?</p></td>
     </tr>
     <tr>
       <th>mod_type</th>
@@ -161,6 +177,10 @@ sizes. Default is NULL, so no random factor in model.</p></td>
     <tr>
       <th>...</th>
       <td><p>Passed to <code><a href='https://mc-stan.org/rstanarm/reference/stan_gamm4.html'>rstanarm::stan_gamm4</a></code> (e.g. chains, iter)</p></td>
+    </tr>
+    <tr>
+      <th>out_file</th>
+      <td><p>Path to file where model results are/will be saved.</p></td>
     </tr>
     </table>
 

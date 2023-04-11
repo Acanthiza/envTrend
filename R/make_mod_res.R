@@ -2,24 +2,17 @@
 
 #' Summarise results from `make_ll_model`
 #'
-#' @param path_to_model_file Character. Path to saved results from
-#' `make_ll_model`
-#' @param geo_col Character. Name of column in original data with spatial
-#' data.
-#' @param time_col Character. Name of column in original data with time data.
-#' @param ref Numeric. Either a reference year (or other time point) or a
-#' negative integer. If the former, all years will be compared to that
-#' `ref`erence. If the later, all years will be compared to themselves + `ref`.
-#' @param pred_step Numeric. What step (in units of `time_col`) to predict at?
-#' @param draws Passed to `ndraws` argument of `tidybayes::add_epred_draws()`.
-#' Numeric or "max". Max will use all possible draws.
-#' @param list_length_q Numeric. What list lengths quantiles to predict at?
+#' @param mod_file Character. Path to saved results from `make_ll_model`
+#' @param ref Numeric. Single value of `var_col` from `make_ll_model` to use as
+#' a reference value or a negative integer to compare all values of `var_col`
+#' against `var_col + ref`.
+#' @param pred_step Numeric. What step (in units of `var_col`) to predict at?
+#' @param cov_q Numeric. What list lengths quantiles to predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
 #' @param do_gc Logical. Run `base::gc` after predict? On a server with shared
 #' resources, can be necessary when summarising many, many models to prevent
-#' filling RAM.
-#' @param sample_new_levels_type Character. Value of the `sample_new_levels`
-#' argument to `tidybayes::add_epred_draws()`.
+#' RAM issues.
+#' @param ... Passed to `tidybayes::add_epred_draws()`
 #'
 #' @return A list with components
 #' \describe{
@@ -28,7 +21,7 @@
 #'   \item{pred}{data frame of predictions (via
 #'   `tidybayes::add_epred_draws()`), including a `diff` column of the
 #'   difference between `ref`erence and each `pred_step` from the minimum of
-#'   `time_col` to the maximum of `time_col`}
+#'   `var_col` to the maximum of `var_col`}
 #'   \item{res}{data frame of predictions summarised, including columns for
 #'   each of `res_q` (applied to the differences between `ref` and `rec`)}
 #'   \item{n_data}{`nrow(mod$data)`}
@@ -38,76 +31,57 @@
 #' @export
 #'
 #' @examples
-make_mod_res <- function(path_to_model_file
-                         , geo_col
-                         , time_col = "year"
-                         , random_col = NULL
-                         , ref = 2000
+make_mod_res <- function(mod_file
+                         , ref = -20
                          , pred_step = 2
-                         , draws = 200
-                         , list_length_q = c(0.25, 0.5, 0.75)
+                         , cov_q = c(0.5)
                          , res_q = c(0.1, 0.5, 0.9)
                          , do_gc = TRUE
-                         , sample_new_levels_type = "uncertainty"
+                         , ...
                          ) {
 
+  model_results <- rio::import(mod_file)
 
-  model_results <- rio::import(path_to_model_file)
+  res <- c(model_results
+           , as.list(environment())
+           , list(...)
+           )
 
-  purrr::walk2(names(model_results)
-               , model_results
+  purrr::walk2(names(res)
+               , res
                , assign
                , pos = 1
                )
 
-  if("stanreg" %in% class(mod)) {
+  if("stanreg" %in% class(res$mod)) {
 
-    if(!is.numeric(draws)) draws <- mod$stanfit@sim$iter
+    if(!exists("ndraws")) ndraws <- res$mod$stanfit@sim$iter
 
-    res <- list(data = mod$data)
-    res$draws = draws
+    # Deal with covariate, if needed
+    if(!is.null(cov_col)) {
 
-    # Deal with list length, if needed
-    if(any(grepl("list_length", names(mod$data)))) {
-
-      res$list_length <- if("list_length" %in% names(mod$data)) {
-
-        envFunc::quibble(mod$data$list_length, list_length_q)
-
-      } else {
-
-        envFunc::quibble(exp(mod$data$log_list_length), list_length_q)
-
-      }
-
-      res$list_length <- res$list_length %>%
+      res$cov <- envFunc::quibble(res$mod$data$cov, cov_q) %>%
         tidyr::pivot_longer(everything()
-                            , names_to = "list_length_q"
-                            , values_to = "list_length"
+                            , names_to = "cov_q"
+                            , values_to = "cov"
                             ) %>%
-        dplyr::mutate(log_list_length = log(list_length)
-                      , list_length_q = forcats::fct_reorder(list_length_q
-                                                             , list_length
-                                                             )
+        dplyr::mutate(log_cov = log(cov)
+                      , cov_q = forcats::fct_reorder(cov_q
+                                                     , cov
+                                                     )
                       )
 
-      if(!"list_length" %in% names(res$data)) {
+    }
 
-        res$data$list_length <- exp(res$data$log_list_length)
+    if(stats::family(res$mod)$family == "binomial") {
 
-      }
+      res$data$success <- res$mod$y[,1]
+      res$data$trials <- res$mod$y[,1] + res$mod$y[,2]
 
     }
 
-    if(stats::family(mod)$family == "binomial") {
-
-      res$data$success <- mod$y[,1]
-      res$data$trials <- mod$y[,1] + mod$y[,2]
-
-    }
-
-    pred_times <- sort(unique(c(seq(min(mod$data[[time_col]], na.rm = TRUE)
-                                    , max(mod$data[[time_col]], na.rm = TRUE)
+    pred_var <- sort(unique(c(seq(min(res$mod$data[[var_col]], na.rm = TRUE)
+                                    , max(res$mod$data[[var_col]], na.rm = TRUE)
                                     , pred_step
                                     )
                                 , ref
@@ -115,34 +89,33 @@ make_mod_res <- function(path_to_model_file
                               )
                        )
 
-    pred_times <- pred_times[pred_times > 0]
+    pred_var <- pred_var[pred_var > 0]
 
-    pred_at <- res$data %>%
+    pred_at <- mod$data %>%
       dplyr::filter(success > 0) %>%
-      dplyr::distinct(dplyr::across(any_of(geo_col))
-                      , dplyr::across(any_of(time_col))
-                      ) %>%
-      dplyr::group_by(dplyr::across(any_of(geo_col))) %>%
-      dplyr::filter(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col)) |
-                      !!rlang::ensym(time_col) == max(!!rlang::ensym(time_col))
+      dplyr::distinct(dplyr::across(any_of(c(cat_col, var_col)))) %>%
+      dplyr::group_by(dplyr::across(any_of(cat_col))) %>%
+      dplyr::filter(!!rlang::ensym(var_col) == min(!!rlang::ensym(var_col)) |
+                      !!rlang::ensym(var_col) == max(!!rlang::ensym(var_col))
                     ) %>%
-      dplyr::mutate(minmax = dplyr::case_when(!!rlang::ensym(time_col) == min(!!rlang::ensym(time_col)) ~ "min"
-                                              , !!rlang::ensym(time_col) == max(!!rlang::ensym(time_col)) ~ "max"
+      dplyr::mutate(minmax = dplyr::case_when(!!rlang::ensym(var_col) == min(!!rlang::ensym(var_col)) ~ "min"
+                                              , !!rlang::ensym(var_col) == max(!!rlang::ensym(var_col)) ~ "max"
                                               , TRUE ~ "neither"
                                               )
                     ) %>%
       dplyr::ungroup() %>%
-      tidyr::pivot_wider(values_from = !!rlang::ensym(time_col)
+      tidyr::pivot_wider(values_from = !!rlang::ensym(var_col)
                          , names_from = "minmax"
                          ) %>%
       na.omit() %>%
-      dplyr::left_join(tibble::tibble(!!rlang::ensym(time_col) := pred_times)
+      dplyr::left_join(tibble::tibble(!!rlang::ensym(var_col) := pred_var)
                        , by = character()
                        ) %>%
-      dplyr::group_by(!!rlang::ensym(geo_col)) %>%
-      dplyr::filter(!!rlang::ensym(time_col) <= max
-                    , !!rlang::ensym(time_col) >= min
+      dplyr::group_by(!!rlang::ensym(cat_col)) %>%
+      dplyr::filter(!!rlang::ensym(var_col) <= max
+                    , !!rlang::ensym(var_col) >= min
                     ) %>%
+      dplyr::ungroup() %>%
       dplyr::select(-c(min, max)) %>%
       {if(!is.null(random_col)) (.) %>%
           dplyr::mutate(!!rlang::ensym(random_col) := factor(paste0(random_col
@@ -152,33 +125,40 @@ make_mod_res <- function(path_to_model_file
                                                                    )
                                                             )
                         ) else (.)
-      }
+      } %>%
+      {if(!is.null(cov_col)) (.) %>%
+          dplyr::left_join(res$cov
+                           , by = character()
+          ) else (.)
+        }
 
+    if(!is.null(var_col)) pred_at["var"] <- pred_at[var_col]
 
-    if(!is.null(time_col)) pred_at["time"] <- pred_at[time_col]
-    if(!is.null(geo_col)) pred_at["geo"] <- pred_at[geo_col]
+    if(!is.null(cat_col)) pred_at["cat"] <- pred_at[cat_col]
+
+    if(!is.null(cov_col)) {
+
+      pred_at[cov_col] <- pred_at$cov
+      pred_at["use_cov"] <- if(log_cov) pred_at$log_cov else pred_at$cov
+
+    }
+
     if(!is.null(random_col)) pred_at["rand"] <- pred_at[random_col]
 
 
     if(nrow(pred_at) > 0) {
 
-      pred <- mod$data %>%
-        dplyr::distinct(dplyr::across(any_of(geo_col))) %>%
+      pred <- res$mod$data %>%
+        dplyr::distinct(dplyr::across(any_of(cat_col))) %>%
         dplyr::mutate(success = 0
                       , trials = 100
                       ) %>%
-        dplyr::left_join(tibble::tibble(year := pred_times)
+        dplyr::left_join(tibble::tibble(year := pred_var)
                          , by = character()
                          ) %>%
         dplyr::inner_join(pred_at) %>%
-        dplyr::full_join(res$list_length
-                         , by = character()
-                         ) %>%
-        tidybayes::add_epred_draws(mod
-                                   , re_formula = NULL
-                                   , allow.new.levels = TRUE
-                                   , ndraws = draws
-                                   , sample_new_levels = sample_new_levels_type
+        tidybayes::add_epred_draws(res$mod
+                                   , ...
                                    , value = "pred"
                                    ) %>%
         dplyr::ungroup()
@@ -186,9 +166,9 @@ make_mod_res <- function(path_to_model_file
       if(ref < 0) {
 
         ref_draw <- pred %>%
-          dplyr::mutate(time = time - ref) %>%
+          dplyr::mutate(!!rlang::ensym(var_col) := !!rlang::ensym(var_col) - ref) %>%
           dplyr::rename(ref = pred) %>%
-          dplyr::select(tidyselect::any_of(c(geo_col, random_col))
+          dplyr::select(tidyselect::any_of(c(cat_col, cov_col, var_col, random_col)) # do include var col here
                         , .draw
                         , ref
                         )
@@ -196,9 +176,9 @@ make_mod_res <- function(path_to_model_file
       } else {
 
         ref_draw <- pred %>%
-          dplyr::filter(time == ref) %>%
-          dplyr::select(tidyselect::any_of(c(geo_col, random_col))
-                        , tidyselect::matches("list_length")
+          dplyr::filter(var == ref) %>%
+          dplyr::select(tidyselect::any_of(c(cat_col, cov_col, random_col)) # don't include var_col here
+                        , tidyselect::matches(cov_name)
                         , .draw
                         , ref = pred
                         )
@@ -215,16 +195,32 @@ make_mod_res <- function(path_to_model_file
                       , diff_prop = pred / ref
                       )
 
-      res$res <- res$pred %>%
-        dplyr::group_by(dplyr::across(any_of(c(geo_col
+      res$res_pred <- res$pred %>%
+        dplyr::group_by(dplyr::across(any_of(c(cat_col
                                                , random_col
-                                               , time_col
+                                               , var_col
                                                )
                                              )
                                       )
-                        , dplyr::across(contains("list_length"))
+                        , dplyr::across(contains(cov_name))
                         ) %>%
-        dplyr::summarise(check = dplyr::n() - draws
+        dplyr::summarise(check = dplyr::n() - ndraws
+                         , n_draws = dplyr::n()
+                         , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
+                         ) %>%
+        dplyr::ungroup() %>%
+        tidyr::unnest(cols = c(pred))
+
+      res$res_diff <- res$pred %>%
+        dplyr::group_by(dplyr::across(any_of(c(cat_col
+                                               , random_col
+                                               , var_col
+                                               )
+                                             )
+                                      )
+                        , dplyr::across(contains(cov_name))
+                        ) %>%
+        dplyr::summarise(check = dplyr::n() - ndraws
                          , pred = median(pred)
                          , n_draws = dplyr::n()
                          , lower = sum(diff < 0) / n_draws
@@ -236,9 +232,9 @@ make_mod_res <- function(path_to_model_file
 
     }
 
-    res$n_data <- nrow(mod$data)
-    res$n_fixed_coefs <- length(mod$coefficients[!grepl(paste0("b\\[|", random_col), names(mod$coefficients))])
-    res$n_random_coefs <- length(mod$coefficients[grepl(paste0("b\\[|", random_col), names(mod$coefficients))])
+    res$n_data <- nrow(res$mod$data)
+    res$n_fixed_coefs <- length(res$mod$coefficients[!grepl(paste0("b\\[|", random_col), names(res$mod$coefficients))])
+    res$n_random_coefs <- length(res$mod$coefficients[grepl(paste0("b\\[|", random_col), names(res$mod$coefficients))])
 
 
     if(do_gc) {

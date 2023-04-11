@@ -6,10 +6,13 @@
 \usage{
 make_ll_model(
   df,
-  out_file,
-  time_col = "year",
-  geo_col = "geo",
+  mod_file,
+  var_col = "year",
+  cat_col = "geo",
+  cov_col = "list_length",
   random_col = NULL,
+  log_cov = TRUE,
+  rand_slope = TRUE,
   mod_type = "glm",
   k = if (mod_type == "gam") 6 else NULL,
   ...
@@ -18,20 +21,29 @@ make_ll_model(
 \arguments{
 \item{df}{Cleaned, filtered data frame.}
 
-\item{out_file}{Path to file where model results are/will be saved.}
+\item{var_col}{Chraacter name of column in \code{df} containing main \code{x} variable.}
 
-\item{geo_col}{Character name of columns in \code{df} containing geographic
-context.}
+\item{cat_col}{Character name of column in \code{df} containing categorical data.}
+
+\item{cov_col}{Character name of column in \code{df} containing secondary \code{x}
+variable.}
 
 \item{random_col}{Character name of column in \code{df} containing random factor
-for model. This is usually the larger of two (probably raster) grid cell
-sizes. Default is NULL, so no random factor in model.}
+for model. Default is NULL, so no random factor in model.}
+
+\item{log_cov}{Logical. Use \code{cov_col} (\code{T}) or the log of \code{cov_col} (\code{F}) in
+model specification.}
+
+\item{rand_slope}{Logical. Should a random slope effect be included in the
+model as well as any random intercept?}
 
 \item{mod_type}{Character. Currently "glm" or "gam".}
 
 \item{k}{Integer used as \code{k} argument of \code{mgcv::s} for use in gam.}
 
 \item{...}{Passed to \code{rstanarm::stan_gamm4} (e.g. chains, iter)}
+
+\item{out_file}{Path to file where model results are/will be saved.}
 }
 \value{
 \code{out_file}. Named list containing inputs and model results as \code{mod}.
