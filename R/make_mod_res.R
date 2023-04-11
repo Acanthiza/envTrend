@@ -56,6 +56,7 @@ make_mod_res <- function(mod_file
   if("stanreg" %in% class(res$mod)) {
 
     if(!exists("ndraws")) ndraws <- res$mod$stanfit@sim$iter
+    if(!exists("sample_new_levels")) sample_new_levels <- "uncertainty"
 
     # Deal with covariate, if needed
     if(!is.null(cov_col)) {
@@ -120,7 +121,7 @@ make_mod_res <- function(mod_file
       {if(!is.null(random_col)) (.) %>%
           dplyr::mutate(!!rlang::ensym(random_col) := factor(paste0(random_col
                                                                    , paste0("_"
-                                                                            , sample_new_levels_type
+                                                                            , sample_new_levels
                                                                             )
                                                                    )
                                                             )
@@ -178,7 +179,7 @@ make_mod_res <- function(mod_file
         ref_draw <- pred %>%
           dplyr::filter(var == ref) %>%
           dplyr::select(tidyselect::any_of(c(cat_col, cov_col, random_col)) # don't include var_col here
-                        , tidyselect::matches(cov_name)
+                        , tidyselect::matches(cov_col)
                         , .draw
                         , ref = pred
                         )
@@ -202,7 +203,7 @@ make_mod_res <- function(mod_file
                                                )
                                              )
                                       )
-                        , dplyr::across(contains(cov_name))
+                        , dplyr::across(contains(cov_col))
                         ) %>%
         dplyr::summarise(check = dplyr::n() - ndraws
                          , n_draws = dplyr::n()
@@ -218,7 +219,7 @@ make_mod_res <- function(mod_file
                                                )
                                              )
                                       )
-                        , dplyr::across(contains(cov_name))
+                        , dplyr::across(contains(cov_col))
                         ) %>%
         dplyr::summarise(check = dplyr::n() - ndraws
                          , pred = median(pred)
