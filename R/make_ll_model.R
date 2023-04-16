@@ -1,10 +1,20 @@
 
 
-#' Make, and save to disk, a list-length corrected reporting rate model.
+#' Run, and save to disk, a list-length corrected reporting rate model.
+#'
+#' Code is now generic enough to take a continuous variable (usually `year`)
+#' plus any combination of: another continuous variable (usually `list_length`),
+#' a categorical variable (often a geographic context) and/or a random variable
+#' (often a taxonomic or geographic context).
 #'
 #' @param df Cleaned, filtered data frame.
-#' @param out_file Path to file where model results are/will be saved.
-#' @param var_col Chraacter name of column in `df` containing main `x` variable.
+#' @param mod_file Path to file where model results are/will be saved.
+#' @param force_new Logical. If `mod_file` exists, should the model be re-run
+#' (and the previous results overwritten)?
+#' @param y Character name of the column in `df` containing the `y` variable.
+#' @param y_total For binomial models only. Character name of the column in `df`
+#' containing success + failure.
+#' @param var_col Character name of column in `df` containing main `x` variable.
 #' @param cat_col Character name of column in `df` containing categorical data.
 #' @param cov_col Character name of column in `df` containing secondary `x`
 #' variable.
@@ -15,18 +25,23 @@
 #' @param rand_slope Logical. Should a random slope effect be included in the
 #' model as well as any random intercept?
 #' @param mod_type Character. Currently "glm" or "gam".
-#' @param k Integer used as `k` argument of `mgcv::s` for use in gam.
+#' @param k For `mod_type = "gam"` only. Integer used as `k` argument of
+#' `mgcv::s()`.
 #' @param ... Passed to `rstanarm::stan_gamm4` (e.g. chains, iter)
 #'
-#' @return `out_file`. Named list containing inputs and model results as `mod`.
+#' @return `out_file`. `.rds` file containing named list of inputs and model
+#' results as `mod`.
 #' @export
 #'
 #' @examples
 make_ll_model <- function(df
                           , mod_file
-                          , var_col = "year"
-                          , cat_col = "geo"
-                          , cov_col = "list_length"
+                          , force_new = FALSE
+                          , y
+                          , y_total = NULL
+                          , var_col = "var"
+                          , cat_col = "cat"
+                          , cov_col = "cov"
                           , random_col = NULL
                           , log_cov = TRUE
                           , rand_slope = TRUE
@@ -35,236 +50,224 @@ make_ll_model <- function(df
                           , ...
                           ) {
 
-  res <- c(as.list(environment()), list(...))
+  run_model <- if(!file.exists(mod_file)) TRUE else force_new
 
-  res$data <- df
-  res$df <- NULL
+  if(run_model) {
 
-  if(!is.null(var_col)) df["var"] <- df[var_col]
-  if(!is.null(cat_col)) df["cat"] <- df[cat_col]
-  if(!is.null(random_col)) df["rand"] <- df[random_col]
+    res <- c(as.list(environment())
+             , list(...)
+             )
 
-  if(!is.null(cov_col)) {
+    res$df <- NULL
 
-    df["cov"] <- df[cov_col]
-    df["log_cov"] <- log(df$cov)
+    df["y"] <- df[y]
+    if(!is.null(y_total)) df["y_total"] <- df[y_total]
+    if(!is.null(var_col)) df["var"] <- df[var_col]
+    if(!is.null(cat_col)) df["cat"] <- df[cat_col]
+    if(!is.null(random_col)) df["rand"] <- df[random_col]
 
-  }
+    if(!is.null(cov_col)) {
 
-  df["use_cov"] <- if(log_cov) df$log_cov else df$cov
+      df["cov"] <- df[cov_col]
+      df["log_cov"] <- log(df["cov"])
 
-  cats <- df %>%
-    dplyr::distinct(cat) %>%
-    nrow()
-
-  randoms <- if(!is.null(random_col)) {
-
-    df %>%
-      dplyr::distinct(rand) %>%
-      nrow()
-
-  } else 0
-
-
-  message(paste0("Trying to run "
-                 , mod_type
-                 , " for "
-                 , gsub("\\.rds", "", basename(mod_file))
-                 )
-          )
-
-  # mod func------
-
-  mod_func <- if(mod_type == "gam") {
-
-    rstanarm::stan_gamm4
-
-  } else if(mod_type == "glm") {
-
-    if(randoms > 1) {
-
-      rstanarm::stan_glmer
-
-    } else {
-
-      rstanarm::stan_glm
+      df["use_cov"] <- if(log_cov) df["log_cov"] else df["cov"]
 
     }
 
-  }
+    covs <- if(!is.null(cov_col)) {
 
-  mod_spec <- if(mod_type == "gam") {
+      df %>%
+        dplyr::distinct(use_cov) %>%
+        nrow()
 
-    # gam spec-------
+    } else 0
 
-    if(cats > 1) {
+    cats <- if(!is.null(cat_col)) {
 
-      as.formula(paste0("cbind(success, trials - success) ~ "
-                        , "s(var, k = "
-                        , k
-                        , ", bs = 'ts') + s(var, k = "
-                        , k
-                        , ", by = cat, bs = 'ts') + cat + use_cov + cat * use_cov"
-                        )
-                 )
+      df %>%
+        dplyr::distinct(cat) %>%
+        nrow()
 
-      } else {
+    } else 0
 
-        as.formula(paste0("cbind(success, trials - success) ~ "
-                          , "s(var, k = "
-                          , k
-                          , ", bs = 'ts') + use_cov"
-                          )
+    rands <- if(!is.null(random_col)) {
+
+      df %>%
+        dplyr::distinct(rand) %>%
+        nrow()
+
+    } else 0
+
+    message(paste0("Trying to run "
+                   , mod_type
+                   , " for "
+                   , gsub("\\.rds", "", basename(mod_file))
                    )
+            )
 
-      }
+    # mod func------
 
-    # glm spec-------
+    mod_func <- if(mod_type == "gam") {
 
-    } else if (mod_type == "glm") {
+      rstanarm::stan_gamm4
 
-      if(cats > 1) {
+    } else if(mod_type == "glm") {
 
-        if(randoms > 1) {
+      if(rands > 1) {
 
-          if(rand_slope) {
-
-            cbind(success, trials - success) ~ var * cat * use_cov + (var | rand)
-
-          } else {
-
-            cbind(success, trials - success) ~ var * cat * use_cov + (1 | rand)
-
-          }
-
-        } else {
-
-          cbind(success, trials - success) ~ var * cat * use_cov
-
-        }
+        rstanarm::stan_glmer
 
       } else {
 
-        if(randoms > 1) {
-
-          if(rand_slope) {
-
-            cbind(success, trials - success) ~ var * use_cov + (var | rand)
-
-          } else {
-
-            cbind(success, trials - success) ~ var * use_cov + (1 | rand)
-
-          }
-
-        } else {
-
-          cbind(success, trials - success) ~ var * use_cov
-
-        }
+        rstanarm::stan_glm
 
       }
 
-    } else cbind(success, trials - success) ~ var
+    }
+
+    # y-------
+
+    y_spec <- if(!is.null(y_total)) {
+
+      paste0("cbind(y, y_total - y)")
+
+    } else "y"
+
+    mod_spec <- if(mod_type == "gam") {
+
+      # gam spec-------
+
+      paste0(y_spec
+             , " ~ "
+             , "s(var, k = "
+             , k
+             , ", bs = 'ts')"
+             , if(covs > 1) " + use_cov"
+             , if(cats > 1) paste0(" + s(var, k = "
+                                   , k
+                                   , ", by = cat, bs = 'ts') + cat"
+                                   )
+             )
+
+      # glm spec-------
+
+      } else if (mod_type == "glm") {
+
+        paste0(y_spec
+               , " ~ "
+               , "var"
+               , if(covs > 1) " + use_cov"
+               , if(cats > 1) " + cat + var * cat"
+               , if(randoms > 1) paste0(" + ("
+                                        , if(rand_slope) "var" else 1
+                                        , " | rand)"
+                                        )
+               )
+
+      } else paste0(y_spec, " ~ var")
+
+    mod_spec <- as.formula(mod_spec)
 
 
-  # mod-----
+    # mod-----
 
-  mod <- tryCatch(
+    mod <- tryCatch(
 
-    {
+      {
 
-      if(mod_type == "gam") {
+        if(mod_type == "gam") {
 
-        if(randoms > 1) {
+          if(rands > 1) {
 
-          if(rand_slope) {
+            if(rand_slope) {
 
-            mod_func(formula = mod_spec
-                     , data = df
-                     , family = stats::binomial()
-                     , random = ~ (var | rand)
-                     , ...
-                     )
+              mod_func(formula = mod_spec
+                       , data = df
+                       , random = ~ (var | rand)
+                       , ...
+                       )
+
+            } else {
+
+              mod_func(formula = mod_spec
+                       , data = df
+                       , random = ~ (1 | rand)
+                       , ...
+                       )
+
+            }
 
           } else {
 
             mod_func(formula = mod_spec
                      , data = df
-                     , family = stats::binomial()
-                     , random = ~ (1 | rand)
                      , ...
                      )
 
           }
 
-        } else {
+        } else if(mod_type == "glm") {
 
           mod_func(formula = mod_spec
                    , data = df
-                   , family = stats::binomial()
                    , ...
                    )
 
         }
 
-      } else if(mod_type == "glm") {
+      }
 
-        mod_func(formula = mod_spec
-                 , data = df
-                 , family = stats::binomial()
-                 , ...
-                 )
+      , error = function(cond) {
+
+        paste0(mod_type
+               , " for "
+               , gsub("\\.rds", "", mod_file)
+               , " gave error:"
+               , message(cond)
+               )
 
       }
 
+    )
+
+
+    # capture missing variables ------
+
+    if(exists("mod")) {
+
+      missing_names <- setdiff(names(df), names(mod$data))
+
+      if(length(missing_names) > 0) {
+
+        mod$data <- mod$data %>%
+          dplyr::bind_cols(df %>%
+                            dplyr::select(tidyselect::any_of(missing_names))
+                          )
+
+      }
+
+      # finalise res-------
+
+      res$covs <- covs
+      res$rands <- rands
+      res$cats <- cats
+
+      res$df <- df
+      res$mod <- mod
+
+      rio::export(res
+                  , mod_file
+                  )
+
     }
 
-    , error = function(cond) {
+    # clean up -------
 
-      paste0(mod_type
-             , " for "
-             , gsub("\\.rds", "", mod_file)
-             , " gave error:"
-             , message(cond)
-             )
+    rm(list = ls())
 
-    }
-
-  )
-
-
-  # capture missing variables ------
-
-  if(exists("mod")) {
-
-    missing_names <- setdiff(names(df), names(mod$data))
-
-    if(length(missing_names) > 0) {
-
-      mod$data <- mod$data %>%
-        dplyr::bind_cols(df %>%
-                          dplyr::select(tidyselect::any_of(missing_names))
-                        )
-
-    }
-
-    # finalise res-------
-
-    res$randoms <- randoms
-    res$cats <- cats
-    res$mod <- mod
-
-    rio::export(res
-                , mod_file
-                )
+    gc()
 
   }
-
-  # clean up -------
-
-  rm(list = ls())
-
-  gc()
 
 }

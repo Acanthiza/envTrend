@@ -2,10 +2,12 @@
 
 #' Summarise results from `make_ll_model`
 #'
+#' Should now be generic enough to
+#'
 #' @param mod_file Character. Path to saved results from `make_ll_model`
-#' @param ref Numeric. Single value of `var_col` from `make_ll_model` to use as
-#' a reference value or a negative integer to compare all values of `var_col`
-#' against `var_col + ref`.
+#' @param ref Numeric. Either a single value of `var_col` from `make_ll_model`
+#' to use as a reference value or a negative integer on the scale of `var_col`
+#' to compare all values of `var_col` against `var_col + ref`.
 #' @param pred_step Numeric. What step (in units of `var_col`) to predict at?
 #' @param cov_q Numeric. What list lengths quantiles to predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
@@ -34,6 +36,7 @@
 make_mod_res <- function(mod_file
                          , ref = -20
                          , pred_step = 2
+                         , include_random = FALSE
                          , cov_q = c(0.5)
                          , res_q = c(0.1, 0.5, 0.9)
                          , do_gc = TRUE
@@ -76,8 +79,8 @@ make_mod_res <- function(mod_file
 
     if(stats::family(res$mod)$family == "binomial") {
 
-      res$data$success <- res$mod$y[,1]
-      res$data$trials <- res$mod$y[,1] + res$mod$y[,2]
+      res$data$y <- res$mod$y[,1]
+      res$data$y_total <- res$mod$y[,1] + res$mod$y[,2]
 
     }
 
@@ -93,7 +96,7 @@ make_mod_res <- function(mod_file
     pred_var <- pred_var[pred_var > 0]
 
     pred_at <- mod$data %>%
-      dplyr::filter(success > 0) %>%
+      dplyr::filter(y_total > 0) %>%
       dplyr::distinct(dplyr::across(any_of(c(cat_col, var_col)))) %>%
       dplyr::group_by(dplyr::across(any_of(cat_col))) %>%
       dplyr::filter(!!rlang::ensym(var_col) == min(!!rlang::ensym(var_col)) |
@@ -111,27 +114,64 @@ make_mod_res <- function(mod_file
       na.omit() %>%
       dplyr::left_join(tibble::tibble(!!rlang::ensym(var_col) := pred_var)
                        , by = character()
-                       ) %>%
-      dplyr::group_by(!!rlang::ensym(cat_col)) %>%
-      dplyr::filter(!!rlang::ensym(var_col) <= max
-                    , !!rlang::ensym(var_col) >= min
-                    ) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(-c(min, max)) %>%
-      {if(!is.null(random_col)) (.) %>%
-          dplyr::mutate(!!rlang::ensym(random_col) := factor(paste0(random_col
-                                                                   , paste0("_"
-                                                                            , sample_new_levels
-                                                                            )
-                                                                   )
-                                                            )
-                        ) else (.)
-      } %>%
-      {if(!is.null(cov_col)) (.) %>%
-          dplyr::left_join(res$cov
-                           , by = character()
-          ) else (.)
-        }
+                       )
+
+    if(!is.null(cat_col)) {
+
+      pred_at <- pred_at %>%
+        dplyr::group_by(!!rlang::ensym(cat_col)) %>%
+        dplyr::filter(!!rlang::ensym(var_col) <= max
+                      , !!rlang::ensym(var_col) >= min
+                      ) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(-c(min, max))
+
+    } else {
+
+      pred_at <- pred_at %>%
+        dplyr::filter(!!rlang::ensym(var_col) <= max
+                      , !!rlang::ensym(var_col) >= min
+                      ) %>%
+        dplyr::select(-c(min, max))
+
+    }
+
+    if(!is.null(random_col)) {
+
+      if(include_random) {
+
+        random_pred <- dplyr::distinct(df[random_col])
+
+      } else {
+
+        random_pred <- tibble::tibble(!!rlang::ensym(random_col) := factor(paste0(random_col
+                                                                                 , paste0("_"
+                                                                                          , sample_new_levels
+                                                                                          )
+                                                                                 )
+                                                                           )
+                                      )
+
+      }
+
+      pred_at <- pred_at %>%
+        dplyr::left_join(random_pred
+                         , by = character()
+                         )
+
+    }
+
+    if(!is.null(cov_col)) {
+
+      pred_at <- pred_at %>%
+        dplyr::left_join(res$cov
+                         , by = character()
+                         )
+
+    }
+
+
+    # translate to generic terms in pred_at
 
     if(!is.null(var_col)) pred_at["var"] <- pred_at[var_col]
 
@@ -154,7 +194,7 @@ make_mod_res <- function(mod_file
         dplyr::mutate(success = 0
                       , trials = 100
                       ) %>%
-        dplyr::left_join(tibble::tibble(year := pred_var)
+        dplyr::left_join(tibble::tibble(!!rlang::ensym(var_col) := pred_var)
                          , by = character()
                          ) %>%
         dplyr::inner_join(pred_at) %>%
@@ -200,10 +240,10 @@ make_mod_res <- function(mod_file
         dplyr::group_by(dplyr::across(any_of(c(cat_col
                                                , random_col
                                                , var_col
+                                               , cov_col
                                                )
                                              )
                                       )
-                        , dplyr::across(contains(cov_col))
                         ) %>%
         dplyr::summarise(check = dplyr::n() - ndraws
                          , n_draws = dplyr::n()
@@ -216,10 +256,10 @@ make_mod_res <- function(mod_file
         dplyr::group_by(dplyr::across(any_of(c(cat_col
                                                , random_col
                                                , var_col
+                                              , cov_col
                                                )
                                              )
                                       )
-                        , dplyr::across(contains(cov_col))
                         ) %>%
         dplyr::summarise(check = dplyr::n() - ndraws
                          , pred = median(pred)

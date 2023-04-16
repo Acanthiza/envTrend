@@ -40,7 +40,7 @@
 
 
 <meta property="og:title" content="Summarise results from make_ll_model — make_mod_res" />
-<meta property="og:description" content="Summarise results from make_ll_model" />
+<meta property="og:description" content="Should now be generic enough to" />
 
 
 
@@ -114,13 +114,14 @@
     </div>
 
     <div class="ref-description">
-    <p>Summarise results from <code>make_ll_model</code></p>
+    <p>Should now be generic enough to</p>
     </div>
 
     <pre class="usage"><span class='fu'>make_mod_res</span><span class='op'>(</span>
   <span class='va'>mod_file</span>,
   ref <span class='op'>=</span> <span class='op'>-</span><span class='fl'>20</span>,
   pred_step <span class='op'>=</span> <span class='fl'>2</span>,
+  include_random <span class='op'>=</span> <span class='cn'>FALSE</span>,
   cov_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.5</span><span class='op'>)</span>,
   res_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
   do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>,
@@ -136,9 +137,9 @@
     </tr>
     <tr>
       <th>ref</th>
-      <td><p>Numeric. Single value of <code>var_col</code> from <code>make_ll_model</code> to use as
-a reference value or a negative integer to compare all values of <code>var_col</code>
-against <code>var_col + ref</code>.</p></td>
+      <td><p>Numeric. Either a single value of <code>var_col</code> from <code>make_ll_model</code>
+to use as a reference value or a negative integer on the scale of <code>var_col</code>
+to compare all values of <code>var_col</code> against <code>var_col + ref</code>.</p></td>
     </tr>
     <tr>
       <th>pred_step</th>

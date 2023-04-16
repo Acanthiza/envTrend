@@ -2,14 +2,17 @@
 % Please edit documentation in R/make_ll_model.R
 \name{make_ll_model}
 \alias{make_ll_model}
-\title{Make, and save to disk, a list-length corrected reporting rate model.}
+\title{Run, and save to disk, a list-length corrected reporting rate model.}
 \usage{
 make_ll_model(
   df,
   mod_file,
-  var_col = "year",
-  cat_col = "geo",
-  cov_col = "list_length",
+  force_new = FALSE,
+  y,
+  y_total = NULL,
+  var_col = "var",
+  cat_col = "cat",
+  cov_col = "cov",
   random_col = NULL,
   log_cov = TRUE,
   rand_slope = TRUE,
@@ -21,7 +24,17 @@ make_ll_model(
 \arguments{
 \item{df}{Cleaned, filtered data frame.}
 
-\item{var_col}{Chraacter name of column in \code{df} containing main \code{x} variable.}
+\item{mod_file}{Path to file where model results are/will be saved.}
+
+\item{force_new}{Logical. If \code{mod_file} exists, should the model be re-run
+(and the previous results overwritten)?}
+
+\item{y}{Character name of the column in \code{df} containing the \code{y} variable.}
+
+\item{y_total}{For binomial models only. Character name of the column in \code{df}
+containing success + failure.}
+
+\item{var_col}{Character name of column in \code{df} containing main \code{x} variable.}
 
 \item{cat_col}{Character name of column in \code{df} containing categorical data.}
 
@@ -39,15 +52,18 @@ model as well as any random intercept?}
 
 \item{mod_type}{Character. Currently "glm" or "gam".}
 
-\item{k}{Integer used as \code{k} argument of \code{mgcv::s} for use in gam.}
+\item{k}{For \code{mod_type = "gam"} only. Integer used as \code{k} argument of
+\code{mgcv::s()}.}
 
 \item{...}{Passed to \code{rstanarm::stan_gamm4} (e.g. chains, iter)}
-
-\item{out_file}{Path to file where model results are/will be saved.}
 }
 \value{
-\code{out_file}. Named list containing inputs and model results as \code{mod}.
+\code{out_file}. \code{.rds} file containing named list of inputs and model
+results as \code{mod}.
 }
 \description{
-Make, and save to disk, a list-length corrected reporting rate model.
+Code is now generic enough to take a continuous variable (usually \code{year})
+plus any combination of: another continuous variable (usually \code{list_length}),
+a categorical variable (often a geographic context) and/or a random variable
+(often a taxonomic or geographic context).
 }

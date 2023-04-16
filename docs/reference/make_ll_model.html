@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Make, and save to disk, a list-length corrected reporting rate model. — make_ll_model • envTrend</title>
+<title>Run, and save to disk, a list-length corrected reporting rate model. — make_ll_model • envTrend</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,11 @@
 
 
 
-<meta property="og:title" content="Make, and save to disk, a list-length corrected reporting rate model. — make_ll_model" />
-<meta property="og:description" content="Make, and save to disk, a list-length corrected reporting rate model." />
+<meta property="og:title" content="Run, and save to disk, a list-length corrected reporting rate model. — make_ll_model" />
+<meta property="og:description" content="Code is now generic enough to take a continuous variable (usually year)
+plus any combination of: another continuous variable (usually list_length),
+a categorical variable (often a geographic context) and/or a random variable
+(often a taxonomic or geographic context)." />
 
 
 
@@ -108,21 +111,27 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Make, and save to disk, a list-length corrected reporting rate model.</h1>
+    <h1>Run, and save to disk, a list-length corrected reporting rate model.</h1>
     <small class="dont-index">Source: <a href='https://github.com/Acanthiza/envTrend/blob/master/R/make_ll_model.R'><code>R/make_ll_model.R</code></a></small>
     <div class="hidden name"><code>make_ll_model.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Make, and save to disk, a list-length corrected reporting rate model.</p>
+    <p>Code is now generic enough to take a continuous variable (usually <code>year</code>)
+plus any combination of: another continuous variable (usually <code>list_length</code>),
+a categorical variable (often a geographic context) and/or a random variable
+(often a taxonomic or geographic context).</p>
     </div>
 
     <pre class="usage"><span class='fu'>make_ll_model</span><span class='op'>(</span>
   <span class='va'>df</span>,
   <span class='va'>mod_file</span>,
-  var_col <span class='op'>=</span> <span class='st'>"year"</span>,
-  cat_col <span class='op'>=</span> <span class='st'>"geo"</span>,
-  cov_col <span class='op'>=</span> <span class='st'>"list_length"</span>,
+  force_new <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  <span class='va'>y</span>,
+  y_total <span class='op'>=</span> <span class='cn'>NULL</span>,
+  var_col <span class='op'>=</span> <span class='st'>"var"</span>,
+  cat_col <span class='op'>=</span> <span class='st'>"cat"</span>,
+  cov_col <span class='op'>=</span> <span class='st'>"cov"</span>,
   random_col <span class='op'>=</span> <span class='cn'>NULL</span>,
   log_cov <span class='op'>=</span> <span class='cn'>TRUE</span>,
   rand_slope <span class='op'>=</span> <span class='cn'>TRUE</span>,
@@ -139,8 +148,26 @@
       <td><p>Cleaned, filtered data frame.</p></td>
     </tr>
     <tr>
+      <th>mod_file</th>
+      <td><p>Path to file where model results are/will be saved.</p></td>
+    </tr>
+    <tr>
+      <th>force_new</th>
+      <td><p>Logical. If <code>mod_file</code> exists, should the model be re-run
+(and the previous results overwritten)?</p></td>
+    </tr>
+    <tr>
+      <th>y</th>
+      <td><p>Character name of the column in <code>df</code> containing the <code>y</code> variable.</p></td>
+    </tr>
+    <tr>
+      <th>y_total</th>
+      <td><p>For binomial models only. Character name of the column in <code>df</code>
+containing success + failure.</p></td>
+    </tr>
+    <tr>
       <th>var_col</th>
-      <td><p>Chraacter name of column in <code>df</code> containing main <code>x</code> variable.</p></td>
+      <td><p>Character name of column in <code>df</code> containing main <code>x</code> variable.</p></td>
     </tr>
     <tr>
       <th>cat_col</th>
@@ -172,21 +199,19 @@ model as well as any random intercept?</p></td>
     </tr>
     <tr>
       <th>k</th>
-      <td><p>Integer used as <code>k</code> argument of <code><a href='https://rdrr.io/pkg/mgcv/man/s.html'>mgcv::s</a></code> for use in gam.</p></td>
+      <td><p>For <code>mod_type = "gam"</code> only. Integer used as <code>k</code> argument of
+<code><a href='https://rdrr.io/pkg/mgcv/man/s.html'>mgcv::s()</a></code>.</p></td>
     </tr>
     <tr>
       <th>...</th>
       <td><p>Passed to <code><a href='https://mc-stan.org/rstanarm/reference/stan_gamm4.html'>rstanarm::stan_gamm4</a></code> (e.g. chains, iter)</p></td>
     </tr>
-    <tr>
-      <th>out_file</th>
-      <td><p>Path to file where model results are/will be saved.</p></td>
-    </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p><code>out_file</code>. Named list containing inputs and model results as <code>mod</code>.</p>
+    <p><code>out_file</code>. <code>.rds</code> file containing named list of inputs and model
+results as <code>mod</code>.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

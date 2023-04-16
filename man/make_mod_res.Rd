@@ -8,6 +8,7 @@ make_mod_res(
   mod_file,
   ref = -20,
   pred_step = 2,
+  include_random = FALSE,
   cov_q = c(0.5),
   res_q = c(0.1, 0.5, 0.9),
   do_gc = TRUE,
@@ -17,9 +18,9 @@ make_mod_res(
 \arguments{
 \item{mod_file}{Character. Path to saved results from \code{make_ll_model}}
 
-\item{ref}{Numeric. Single value of \code{var_col} from \code{make_ll_model} to use as
-a reference value or a negative integer to compare all values of \code{var_col}
-against \code{var_col + ref}.}
+\item{ref}{Numeric. Either a single value of \code{var_col} from \code{make_ll_model}
+to use as a reference value or a negative integer on the scale of \code{var_col}
+to compare all values of \code{var_col} against \code{var_col + ref}.}
 
 \item{pred_step}{Numeric. What step (in units of \code{var_col}) to predict at?}
 
@@ -50,5 +51,5 @@ each of \code{res_q} (applied to the differences between \code{ref} and \code{re
 }
 }
 \description{
-Summarise results from \code{make_ll_model}
+Should now be generic enough to
 }
