@@ -11,6 +11,8 @@
 #' @param pred_step Numeric. What step (in units of `var_col`) to predict at?
 #' @param cov_q Numeric. What list lengths quantiles to predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
+#' @param keep_pred Logical. Return `pred` component of results? Saves memory
+#' if this is not returned.
 #' @param do_gc Logical. Run `base::gc` after predict? On a server with shared
 #' resources, can be necessary when summarising many, many models to prevent
 #' RAM issues.
@@ -39,26 +41,28 @@ make_mod_res <- function(mod_file
                          , include_random = FALSE
                          , cov_q = c(0.5)
                          , res_q = c(0.1, 0.5, 0.9)
+                         , keep_pred = TRUE
                          , do_gc = TRUE
                          , ...
                          ) {
 
   model_results <- rio::import(mod_file)
 
-  res <- c(model_results
-           , as.list(environment())
+  purrr::walk2(names(model_results)
+               , model_results
+               , assign
+               , envir = environment()
+               )
+
+  rm(model_results)
+
+  res <- c(as.list(environment())
            , list(...)
            )
 
-  purrr::walk2(names(res)
-               , res
-               , assign
-               , pos = 1
-               )
-
   if("stanreg" %in% class(res$mod)) {
 
-    if(!exists("ndraws")) ndraws <- res$mod$stanfit@sim$iter
+    if(!exists("ndraws")) ndraws <- nrow(tibble::as_tibble(res$mod))
     if(!exists("sample_new_levels")) sample_new_levels <- "uncertainty"
 
     # Deal with covariate, if needed
@@ -79,8 +83,8 @@ make_mod_res <- function(mod_file
 
     if(stats::family(res$mod)$family == "binomial") {
 
-      res$data$y <- res$mod$y[,1]
-      res$data$y_total <- res$mod$y[,1] + res$mod$y[,2]
+      res$mod$data$y <- res$mod$y[,1]
+      res$mod$data$y_total <- res$mod$y[,1] + res$mod$y[,2]
 
     }
 
@@ -201,6 +205,11 @@ make_mod_res <- function(mod_file
         tidybayes::add_epred_draws(res$mod
                                    , ...
                                    , value = "pred"
+
+                                   # , re_formula = NULL
+                                   # , allow.new.levels = TRUE
+                                   # , sample_new_levels = "uncertainty"
+
                                    ) %>%
         dplyr::ungroup()
 
@@ -236,7 +245,7 @@ make_mod_res <- function(mod_file
                       , diff_prop = pred / ref
                       )
 
-      res$res_pred <- res$pred %>%
+      res$res <- res$pred %>%
         dplyr::group_by(dplyr::across(any_of(c(cat_col
                                                , random_col
                                                , var_col
@@ -247,29 +256,16 @@ make_mod_res <- function(mod_file
                         ) %>%
         dplyr::summarise(check = dplyr::n() - ndraws
                          , n_draws = dplyr::n()
-                         , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
-                         ) %>%
-        dplyr::ungroup() %>%
-        tidyr::unnest(cols = c(pred))
-
-      res$res_diff <- res$pred %>%
-        dplyr::group_by(dplyr::across(any_of(c(cat_col
-                                               , random_col
-                                               , var_col
-                                              , cov_col
-                                               )
-                                             )
-                                      )
-                        ) %>%
-        dplyr::summarise(check = dplyr::n() - ndraws
-                         , pred = median(pred)
-                         , n_draws = dplyr::n()
                          , lower = sum(diff < 0) / n_draws
-                         , diff = envFunc::quibble(diff, res_q, na.rm = TRUE)
+                         , higher = sum(diff > 0) / n_draws
+                         , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
+                         , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
+                           setNames(paste0("diff_", names(.)))
                          ) %>%
         dplyr::ungroup() %>%
-        tidyr::unnest(cols = c(diff)) %>%
-        add_likelihood(lower)
+        tidyr::unnest(cols = c(pred, diff))
+
+      if(!keep_pred) res$pred <- NULL
 
     }
 
@@ -288,7 +284,7 @@ make_mod_res <- function(mod_file
 
     }
 
-  } else res <- list("Not 'stanreg'")
+  } else res$mod <- "Not 'stanreg'"
 
   return(res)
 

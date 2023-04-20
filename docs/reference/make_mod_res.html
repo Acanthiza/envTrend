@@ -124,6 +124,7 @@
   include_random <span class='op'>=</span> <span class='cn'>FALSE</span>,
   cov_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.5</span><span class='op'>)</span>,
   res_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
+  keep_pred <span class='op'>=</span> <span class='cn'>TRUE</span>,
   do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>,
   <span class='va'>...</span>
 <span class='op'>)</span></pre>
@@ -152,6 +153,11 @@ to compare all values of <code>var_col</code> against <code>var_col + ref</code>
     <tr>
       <th>res_q</th>
       <td><p>Numeric. What quantiles to summarise predictions at?</p></td>
+    </tr>
+    <tr>
+      <th>keep_pred</th>
+      <td><p>Logical. Return <code>pred</code> component of results? Saves memory
+if this is not returned.</p></td>
     </tr>
     <tr>
       <th>do_gc</th>
