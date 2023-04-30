@@ -11,6 +11,8 @@
 #' @param pred_step Numeric. What step (in units of `var_col`) to predict at?
 #' @param cov_q Numeric. What list lengths quantiles to predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
+#' @param keep_mod Logical. Return `mod` component of results (imported from
+#' `mod_file`). Saves memory if this is not returned.
 #' @param keep_pred Logical. Return `pred` component of results? Saves memory
 #' if this is not returned.
 #' @param do_gc Logical. Run `base::gc` after predict? On a server with shared
@@ -41,22 +43,15 @@ make_mod_res <- function(mod_file
                          , include_random = FALSE
                          , cov_q = c(0.5)
                          , res_q = c(0.1, 0.5, 0.9)
+                         , keep_mod = TRUE
                          , keep_pred = TRUE
                          , do_gc = TRUE
                          , ...
                          ) {
 
-  model_results <- rio::import(mod_file)
+  res <- rio::import(mod_file)
 
-  purrr::walk2(names(model_results)
-               , model_results
-               , assign
-               , envir = environment()
-               )
-
-  rm(model_results)
-
-  res <- c(as.list(environment())
+  res <- c(res
            , list(...)
            )
 
@@ -265,14 +260,14 @@ make_mod_res <- function(mod_file
         dplyr::ungroup() %>%
         tidyr::unnest(cols = c(pred, diff))
 
-      if(!keep_pred) res$pred <- NULL
-
     }
 
     res$n_data <- nrow(res$mod$data)
     res$n_fixed_coefs <- length(res$mod$coefficients[!grepl(paste0("b\\[|", random_col), names(res$mod$coefficients))])
     res$n_random_coefs <- length(res$mod$coefficients[grepl(paste0("b\\[|", random_col), names(res$mod$coefficients))])
 
+    if(!keep_pred) res$pred <- NULL
+    if(!keep_mod) res$mod <- NULL
 
     if(do_gc) {
 

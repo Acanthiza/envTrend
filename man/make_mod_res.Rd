@@ -11,6 +11,7 @@ make_mod_res(
   include_random = FALSE,
   cov_q = c(0.5),
   res_q = c(0.1, 0.5, 0.9),
+  keep_mod = TRUE,
   keep_pred = TRUE,
   do_gc = TRUE,
   ...
@@ -28,6 +29,9 @@ to compare all values of \code{var_col} against \code{var_col + ref}.}
 \item{cov_q}{Numeric. What list lengths quantiles to predict at?}
 
 \item{res_q}{Numeric. What quantiles to summarise predictions at?}
+
+\item{keep_mod}{Logical. Return \code{mod} component of results (imported from
+\code{mod_file}). Saves memory if this is not returned.}
 
 \item{keep_pred}{Logical. Return \code{pred} component of results? Saves memory
 if this is not returned.}
