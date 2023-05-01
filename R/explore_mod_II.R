@@ -53,7 +53,7 @@
 
     message(print(taxa))
 
-    if(!exists("ndraws", inherits = FALSE)) ndraws <- nrow(tibble::as_tibble(mod))
+    if("ndraws" %in% names(results)) results$ndraws <- nrow(tibble::as_tibble(mod))
 
 
     #-------setup explore-------
@@ -406,7 +406,7 @@
 
       as.formula(paste0(if(cat_col %in% names(dat_exp)) cat_col
                         , " ~ "
-                        , if(random_col %in% names(dat_exp)) random_col
+                        , if(random_col %in% names(dat_exp)) random_col else "."
                         )
                  )
 

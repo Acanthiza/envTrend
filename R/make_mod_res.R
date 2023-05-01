@@ -52,13 +52,23 @@ make_mod_res <- function(mod_file
   res <- rio::import(mod_file)
 
   res <- c(res
+           , as.list(environment())
            , list(...)
            )
 
+  res$res <- NULL
+
+  purrr::walk2(names(res[grepl("col", names(res))])
+               , res[grepl("col", names(res))]
+               , assign
+               , envir = environment()
+               )
+
   if("stanreg" %in% class(res$mod)) {
 
-    if(!exists("ndraws")) ndraws <- nrow(tibble::as_tibble(res$mod))
-    if(!exists("sample_new_levels")) sample_new_levels <- "uncertainty"
+    # deal with some of ... that are required elsewhere
+    if(is.null(res[["ndraws"]])) res$ndraws <- nrow(tibble::as_tibble(res$mod))
+    if(is.null(res[["sample_new_levels"]])) res$sample_new_levels <- "uncertainty" # default via tidybayes::add_epred_draws
 
     # Deal with covariate, if needed
     if(!is.null(cov_col)) {
@@ -76,6 +86,7 @@ make_mod_res <- function(mod_file
 
     }
 
+    # Deal with response variable if family is binomial (probably doesn't work where weights argument is used instead of cbind?)
     if(stats::family(res$mod)$family == "binomial") {
 
       res$mod$data$y <- res$mod$y[,1]
@@ -83,6 +94,7 @@ make_mod_res <- function(mod_file
 
     }
 
+    # Create new_data for pred
     pred_var <- sort(unique(c(seq(min(res$mod$data[[var_col]], na.rm = TRUE)
                                     , max(res$mod$data[[var_col]], na.rm = TRUE)
                                     , pred_step
@@ -94,7 +106,7 @@ make_mod_res <- function(mod_file
 
     pred_var <- pred_var[pred_var > 0]
 
-    pred_at <- mod$data %>%
+    pred_at <- res$mod$data %>%
       dplyr::filter(y_total > 0) %>%
       dplyr::distinct(dplyr::across(any_of(c(cat_col, var_col)))) %>%
       dplyr::group_by(dplyr::across(any_of(cat_col))) %>%
@@ -145,7 +157,7 @@ make_mod_res <- function(mod_file
 
         random_pred <- tibble::tibble(!!rlang::ensym(random_col) := factor(paste0(random_col
                                                                                  , paste0("_"
-                                                                                          , sample_new_levels
+                                                                                          , res$sample_new_levels
                                                                                           )
                                                                                  )
                                                                            )
@@ -179,7 +191,7 @@ make_mod_res <- function(mod_file
     if(!is.null(cov_col)) {
 
       pred_at[cov_col] <- pred_at$cov
-      pred_at["use_cov"] <- if(log_cov) pred_at$log_cov else pred_at$cov
+      pred_at["use_cov"] <- if(res$log_cov) pred_at$log_cov else pred_at$cov
 
     }
 
@@ -249,7 +261,7 @@ make_mod_res <- function(mod_file
                                              )
                                       )
                         ) %>%
-        dplyr::summarise(check = dplyr::n() - ndraws
+        dplyr::summarise(check = dplyr::n() - res$ndraws
                          , n_draws = dplyr::n()
                          , lower = sum(diff < 0) / n_draws
                          , higher = sum(diff > 0) / n_draws
