@@ -71,7 +71,7 @@ make_mod_res <- function(mod_file
     if(is.null(res[["sample_new_levels"]])) res$sample_new_levels <- "uncertainty" # default via tidybayes::add_epred_draws
 
     # Deal with covariate, if needed
-    if(!is.null(cov_col)) {
+    if(!is.null(res$cov_col)) {
 
       res$cov <- envFunc::quibble(res$mod$data$cov, cov_q) %>%
         tidyr::pivot_longer(everything()
@@ -95,8 +95,8 @@ make_mod_res <- function(mod_file
     }
 
     # Create new_data for pred
-    pred_var <- sort(unique(c(seq(min(res$mod$data[[var_col]], na.rm = TRUE)
-                                    , max(res$mod$data[[var_col]], na.rm = TRUE)
+    pred_var <- sort(unique(c(seq(min(res$mod$data[[res$var_col]], na.rm = TRUE)
+                                    , max(res$mod$data[[res$var_col]], na.rm = TRUE)
                                     , pred_step
                                     )
                                 , ref
@@ -151,7 +151,7 @@ make_mod_res <- function(mod_file
 
       if(include_random) {
 
-        random_pred <- dplyr::distinct(df[random_col])
+        random_pred <- dplyr::distinct(res$mod$data[random_col])
 
       } else {
 
@@ -213,6 +213,7 @@ make_mod_res <- function(mod_file
                                    , ...
                                    , value = "pred"
 
+                                   # used in testing
                                    # , re_formula = NULL
                                    # , allow.new.levels = TRUE
                                    # , sample_new_levels = "uncertainty"
