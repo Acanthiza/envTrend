@@ -12,7 +12,7 @@ explore_mod_ll(
   recent = as.numeric(format(Sys.Date(), "\%Y")) - 2,
   limit_preds = TRUE,
   plot_draws = 200,
-  diff_category = model_results$cat_col,
+  diff_category = NULL,
   diff_direction = c("lower", "higher"),
   do_gc = TRUE
 )

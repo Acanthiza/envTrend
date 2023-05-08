@@ -27,12 +27,14 @@
                              , recent = as.numeric(format(Sys.Date(), "%Y")) - 2
                              , limit_preds = TRUE
                              , plot_draws = 200
-                             , diff_category = model_results$cat_col
+                             , diff_category = NULL
                              , diff_direction = c("lower", "higher")
                              , do_gc = TRUE
                              ) {
 
     diff_direction <- diff_direction[1]
+
+    if(is.null(diff_category)) diff_category <- model_results$cat_col
 
     purrr::walk2(names(model_results)
                  , model_results
@@ -402,11 +404,18 @@
     pred_plot_draws <- pred %>%
       dplyr::filter(.draw %in% get_draws)
 
-    facet_form <- if(any(cat_col %in% names(dat_exp), random_col %in% names(dat_exp))) {
+    facet_form <- if(any(cat_col %in% names(dat_exp)
+                         , if(!is.null(random_col)) random_col %in% names(dat_exp)
+                         )
+                     ) {
 
       as.formula(paste0(if(cat_col %in% names(dat_exp)) cat_col
                         , " ~ "
-                        , if(random_col %in% names(dat_exp)) random_col else "."
+                        , if(!is.null(random_col)) {
+
+                          if(random_col %in% names(dat_exp))  random_col else "."
+
+                          } else "."
                         )
                  )
 
@@ -560,7 +569,8 @@
                    , linetype = 2
                    , colour = "red"
                    ) +
-        ggplot2::scale_fill_viridis_d(drop = FALSE) +
+        ggplot2::scale_fill_viridis_d(drop = FALSE)  +
+        ggplot2::facet_wrap(facet_form) +
         ggplot2::labs(title = plot_titles
                       , subtitle = paste0("Difference in "
                                           , max(recent, na.rm = TRUE)
