@@ -245,13 +245,13 @@ make_mod_res <- function(mod_file
                          ) %>%
         dplyr::inner_join(pred_at) %>%
         tidybayes::add_epred_draws(results$mod
-                                   #, ...
+                                   , ...
                                    , value = "pred"
 
                                    # used in testing
-                                   , re_formula = NULL
-                                   , allow.new.levels = TRUE
-                                   , sample_new_levels = "uncertainty"
+                                   # , re_formula = NULL
+                                   # , allow.new.levels = TRUE
+                                   # , sample_new_levels = "uncertainty"
 
                                    ) %>%
         {if(results$num_divergent > 0) (.) %>% dplyr::mutate(divergent = results$divergent) else (.)} %>%
