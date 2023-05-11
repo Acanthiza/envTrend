@@ -79,7 +79,7 @@ make_mod_res <- function(mod_file
     results$summary <- summary(results$mod$stanfit
                                , probs = c(0.1, 0.5, 0.9)
                                ) %>%
-      `[[`("summary") %>%
+      `[[`(1) %>%
       tibble::as_tibble(rownames = "parameter")
 
     # values of 1.05 and 100 (used below) taken from printout associated with rstan::monitor
