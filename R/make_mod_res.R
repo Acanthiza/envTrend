@@ -49,31 +49,58 @@ make_mod_res <- function(mod_file
                          , ...
                          ) {
 
-  res <- rio::import(mod_file)
+  results <- rio::import(mod_file)
 
-  res <- c(res
-           , as.list(environment())
-           , list(...)
-           )
+  results <- c(results
+               , as.list(environment())
+               , list(...)
+               )
 
-  res$res <- NULL
+  results$res <- NULL
 
-  purrr::walk2(names(res[grepl("col", names(res))])
-               , res[grepl("col", names(res))]
+  purrr::walk2(names(results[grepl("col", names(results))])
+               , results[grepl("col", names(results))]
                , assign
                , envir = environment()
                )
 
-  if("stanreg" %in% class(res$mod)) {
+  if("stanreg" %in% class(results$mod)) {
+
+    # diagnostics--------
+
+    results$num_divergent <- rstan::get_num_divergent(results$mod$stanfit)
+
+    results$prop_divergent <- results$num_divergent / nrow(data.frame(results$mod))
+
+    results$monitor <- rstan::monitor(as.array(results$mod))
+
+    # values of 1.05 and 100 (used below) taken from printout associated with rstan::monitor
+
+    results$check_monitor <- as_tibble(results$monitor) %>%
+      dplyr::select(Rhat, Bulk_ESS, Tail_ESS) %>%
+      tidyr::pivot_longer(everything()
+                          , names_to = "diagnostic"
+                          ) %>%
+      dplyr::mutate(fail = dplyr::case_when(diagnostic == "Rhat" ~ value >= 1.05
+                                            , grepl("ESS", diagnostic) ~ value < 100
+                                            , TRUE ~ NA
+                                            )
+                    ) %>%
+      dplyr::group_by(diagnostic) %>%
+      dplyr::summarise(parameters = n()
+                       , failed = sum(fail)
+                       ) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(pass = failed == 0)
 
     # deal with some of ... that are required elsewhere
-    if(is.null(res[["ndraws"]])) res$ndraws <- nrow(tibble::as_tibble(res$mod))
-    if(is.null(res[["sample_new_levels"]])) res$sample_new_levels <- "uncertainty" # default via tidybayes::add_epred_draws
+    if(is.null(results[["ndraws"]])) results$ndraws <- nrow(tibble::as_tibble(results$mod))
+    if(is.null(results[["sample_new_levels"]])) results$sample_new_levels <- "uncertainty" # default via tidybayes::add_epred_draws
 
     # Deal with covariate, if needed
-    if(!is.null(res$cov_col)) {
+    if(!is.null(results$cov_col)) {
 
-      res$cov <- envFunc::quibble(res$mod$data$cov, cov_q) %>%
+      results$cov <- envFunc::quibble(results$mod$data$cov, cov_q) %>%
         tidyr::pivot_longer(everything()
                             , names_to = "cov_q"
                             , values_to = "cov"
@@ -87,16 +114,16 @@ make_mod_res <- function(mod_file
     }
 
     # Deal with response variable if family is binomial (probably doesn't work where weights argument is used instead of cbind?)
-    if(stats::family(res$mod)$family == "binomial") {
+    if(stats::family(results$mod)$family == "binomial") {
 
-      res$mod$data$y <- res$mod$y[,1]
-      res$mod$data$y_total <- res$mod$y[,1] + res$mod$y[,2]
+      results$mod$data$y <- results$mod$y[,1]
+      results$mod$data$y_total <- results$mod$y[,1] + results$mod$y[,2]
 
     }
 
     # Create new_data for pred
-    pred_var <- sort(unique(c(seq(min(res$mod$data[[res$var_col]], na.rm = TRUE)
-                                    , max(res$mod$data[[res$var_col]], na.rm = TRUE)
+    pred_var <- sort(unique(c(seq(min(results$mod$data[[results$var_col]], na.rm = TRUE)
+                                    , max(results$mod$data[[results$var_col]], na.rm = TRUE)
                                     , pred_step
                                     )
                                 , ref
@@ -106,7 +133,7 @@ make_mod_res <- function(mod_file
 
     pred_var <- pred_var[pred_var > 0]
 
-    pred_at <- res$mod$data %>%
+    pred_at <- results$mod$data %>%
       dplyr::filter(y_total > 0) %>%
       dplyr::distinct(dplyr::across(any_of(c(cat_col, var_col)))) %>%
       dplyr::group_by(dplyr::across(any_of(cat_col))) %>%
@@ -151,13 +178,13 @@ make_mod_res <- function(mod_file
 
       if(include_random) {
 
-        random_pred <- dplyr::distinct(res$mod$data[random_col])
+        random_pred <- dplyr::distinct(results$mod$data[random_col])
 
       } else {
 
         random_pred <- tibble::tibble(!!rlang::ensym(random_col) := factor(paste0(random_col
                                                                                  , paste0("_"
-                                                                                          , res$sample_new_levels
+                                                                                          , results$sample_new_levels
                                                                                           )
                                                                                  )
                                                                            )
@@ -175,7 +202,7 @@ make_mod_res <- function(mod_file
     if(!is.null(cov_col)) {
 
       pred_at <- pred_at %>%
-        dplyr::left_join(res$cov
+        dplyr::left_join(results$cov
                          , by = character()
                          )
 
@@ -191,7 +218,7 @@ make_mod_res <- function(mod_file
     if(!is.null(cov_col)) {
 
       pred_at[cov_col] <- pred_at$cov
-      pred_at["use_cov"] <- if(res$log_cov) pred_at$log_cov else pred_at$cov
+      pred_at["use_cov"] <- if(results$log_cov) pred_at$log_cov else pred_at$cov
 
     }
 
@@ -200,7 +227,7 @@ make_mod_res <- function(mod_file
 
     if(nrow(pred_at) > 0) {
 
-      pred <- res$mod$data %>%
+      pred <- results$mod$data %>%
         dplyr::distinct(dplyr::across(any_of(cat_col))) %>%
         dplyr::mutate(success = 0
                       , trials = 100
@@ -209,7 +236,7 @@ make_mod_res <- function(mod_file
                          , by = character()
                          ) %>%
         dplyr::inner_join(pred_at) %>%
-        tidybayes::add_epred_draws(res$mod
+        tidybayes::add_epred_draws(results$mod
                                    , ...
                                    , value = "pred"
 
@@ -247,13 +274,13 @@ make_mod_res <- function(mod_file
 
     if(nrow(pred) > 0) {
 
-      res$pred <- pred %>%
+      results$pred <- pred %>%
         dplyr::left_join(ref_draw) %>%
         dplyr::mutate(diff = -1 * (ref - pred)
                       , diff_prop = pred / ref
                       )
 
-      res$res <- res$pred %>%
+      results$res <- results$pred %>%
         dplyr::group_by(dplyr::across(any_of(c(cat_col
                                                , random_col
                                                , var_col
@@ -262,7 +289,7 @@ make_mod_res <- function(mod_file
                                              )
                                       )
                         ) %>%
-        dplyr::summarise(check = dplyr::n() - res$ndraws
+        dplyr::summarise(check = dplyr::n() - results$ndraws
                          , n_draws = dplyr::n()
                          , lower = sum(diff < 0) / n_draws
                          , higher = sum(diff > 0) / n_draws
@@ -275,16 +302,16 @@ make_mod_res <- function(mod_file
 
     }
 
-    res$n_data <- nrow(res$mod$data)
-    res$n_fixed_coefs <- length(res$mod$coefficients[!grepl(paste0("b\\[|", random_col), names(res$mod$coefficients))])
-    res$n_random_coefs <- length(res$mod$coefficients[grepl(paste0("b\\[|", random_col), names(res$mod$coefficients))])
+    results$n_data <- nrow(results$mod$data)
+    results$n_fixed_coefs <- length(results$mod$coefficients[!grepl(paste0("b\\[|", random_col), names(results$mod$coefficients))])
+    results$n_random_coefs <- length(results$mod$coefficients[grepl(paste0("b\\[|", random_col), names(results$mod$coefficients))])
 
-    if(!keep_pred) res$pred <- NULL
-    if(!keep_mod) res$mod <- NULL
+    if(!keep_pred) results$pred <- NULL
+    if(!keep_mod) results$mod <- NULL
 
     if(do_gc) {
 
-      stuff <- grep("res", ls(), value = TRUE, invert = TRUE)
+      stuff <- grep("results", ls(), value = TRUE, invert = TRUE)
 
       rm(list = stuff)
 
@@ -292,8 +319,8 @@ make_mod_res <- function(mod_file
 
     }
 
-  } else res$mod <- "Not 'stanreg'"
+  } else results$mod <- "Not 'stanreg'"
 
-  return(res)
+  return(results)
 
 }

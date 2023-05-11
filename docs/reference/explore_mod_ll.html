@@ -131,7 +131,9 @@ other rstanarm models? Not sure anymore.</p>
   plot_draws <span class='op'>=</span> <span class='fl'>200</span>,
   diff_category <span class='op'>=</span> <span class='cn'>NULL</span>,
   diff_direction <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"lower"</span>, <span class='st'>"higher"</span><span class='op'>)</span>,
-  do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>
+  do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  plot_divergent <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  divergent_thresh <span class='op'>=</span> <span class='fl'>0.001</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -142,8 +144,14 @@ other rstanarm models? Not sure anymore.</p>
       <td><p>List. results from <code><a href='make_ll_model.html'>make_ll_model()</a></code></p></td>
     </tr>
     <tr>
-      <th>do_gc</th>
-      <td></td>
+      <th>plot_divergent</th>
+      <td><p>Logical. If there are divergent transitions, generate
+pairs plots? Can be very slow with many samples.</p></td>
+    </tr>
+    <tr>
+      <th>divergent_thresh</th>
+      <td><p>Proportion of divergent transitions above which model
+results will not be generated. Really, this should be 0. Default 0.001.</p></td>
     </tr>
     </table>
 

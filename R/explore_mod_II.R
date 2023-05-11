@@ -15,6 +15,10 @@
 #' @param diff_category
 #' @param diff_direction
 #' @param do_gc
+#' @param plot_divergent Logical. If there are divergent transitions, generate
+#' pairs plots? Can be very slow with many samples.
+#' @param divergent_thresh Proportion of divergent transitions above which model
+#' results will not be generated. Really, this should be 0. Default 0.001.
 #'
 #' @return
 #' @export
@@ -30,6 +34,8 @@
                              , diff_category = NULL
                              , diff_direction = c("lower", "higher")
                              , do_gc = TRUE
+                             , plot_divergent = FALSE
+                             , divergent_thresh = 0.001
                              ) {
 
     diff_direction <- diff_direction[1]
@@ -53,12 +59,46 @@
     taxa <- as.character(taxa)
     common <- as.character(common)
 
-    message(print(taxa))
 
-    if("ndraws" %in% names(results)) results$ndraws <- nrow(tibble::as_tibble(mod))
+    # divergent plots?------
+
+    if(all(results$num_divergent > 0, plot_divergent)) {
+
+      np_cp <- bayesplot::nuts_params(mod$stanfit)
+
+      results$divergent_params_plot_fixed <- bayesplot::mcmc_pairs(as.array(mod)
+                                                                   , np = np_cp
+                                                                   , pars = grep("^b"
+                                                                                 , names(mod$coefficients)
+                                                                                 , value = TRUE
+                                                                                 , invert = F
+                                                                                 )
+                                                                   , off_diag_args = list(size = 0.75)
+                                                                   )
+
+      if(length(grep("^b"
+                     , names(mod$coefficients)
+                     , value = TRUE
+                     )
+                ) > 0
+         ) {
+
+        results$divergent_params_plot_random <- bayesplot::mcmc_pairs(as.array(mod)
+                                                                      , np = np_cp
+                                                                      , pars = grep("^b"
+                                                                                    , names(mod$coefficients)
+                                                                                    , value = TRUE
+                                                                                    , invert = FALSE
+                                                                                    )
+                                                                      , off_diag_args = list(size = 0.75)
+                                                                      )
+
+      }
+
+    }
 
 
-    #-------setup explore-------
+    # setup explore-------
 
     plot_titles <- bquote(~italic(.(taxa))*":" ~ .(common))
 
@@ -103,7 +143,7 @@
       ncol() %>%
       `>` (0)
 
-    # Character variables
+    # exp character------
     if(results$has_character) {
 
       plot_data <- dat_exp %>%
@@ -165,7 +205,7 @@
 
     }
 
-    # Numeric variables
+    # exp numeric------
     if(results$has_numeric) {
 
       plot_data <- dat_exp %>%
@@ -215,6 +255,9 @@
       dplyr::mutate(dplyr::across(where(is.character),factor)) %>%
       dplyr::select(where(~is.numeric(.x)|is.factor(.x) & dplyr::n_distinct(.x) < max_levels)) %>%
       dplyr::mutate(dplyr::across(where(is.factor),factor))
+
+
+    # pairs plot-------
 
     results$pairs <- GGally::ggpairs(plot_data) +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
@@ -558,6 +601,15 @@
 
     if(nrow(plot_data) > 0) {
 
+      if(is.null(diff_category)) {
+
+        diff_category <- "all"
+
+        plot_data <- plot_data %>%
+          dplyr::mutate(all := "all")
+
+      }
+
       results$year_diff_plot <- ggplot2::ggplot(data = plot_data
                                             , ggplot2::aes(.data$diff
                                                            , .data[[diff_category]]
@@ -588,6 +640,9 @@
                       )
 
     }
+
+
+    # Clean up-------
 
     if(do_gc) {
 
