@@ -50,7 +50,7 @@
 
     rm(model_results)
 
-    results <- c(as.list(environment()))
+    results <- as.list(environment())
 
     `:=` <- rlang::`:=`
 
@@ -66,15 +66,23 @@
 
       np_cp <- bayesplot::nuts_params(mod$stanfit)
 
-      results$divergent_params_plot_fixed <- bayesplot::mcmc_pairs(as.array(mod)
-                                                                   , np = np_cp
-                                                                   , pars = grep("^b"
-                                                                                 , names(mod$coefficients)
-                                                                                 , value = TRUE
-                                                                                 , invert = F
-                                                                                 )
-                                                                   , off_diag_args = list(size = 0.75)
-                                                                   )
+      if(length(mod$coefficients) < 6) {
+
+        results$pairs <- bayesplot::mcmc_pairs(as.array(mod)
+                                               , np = np_cp
+                                               , pars = grep("^b"
+                                                             , names(mod$coefficients)
+                                                             , value = TRUE
+                                                             , invert = F
+                                                             )
+                                               , off_diag_args = list(size = 0.75)
+                                               )
+
+      }
+
+      results$paracord <- bayesplot::mcmc_parcoord(as.array(mod)
+                                                   , np = np_cp
+                                                   )
 
       if(length(grep("^b"
                      , names(mod$coefficients)

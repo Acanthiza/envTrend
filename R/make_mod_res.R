@@ -49,9 +49,7 @@ make_mod_res <- function(mod_file
                          , ...
                          ) {
 
-  results <- rio::import(mod_file)
-
-  results <- c(results
+  results <- c(rio::import(mod_file)
                , as.list(environment())
                , list(...)
                )
