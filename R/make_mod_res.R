@@ -70,17 +70,27 @@ make_mod_res <- function(mod_file
 
     results$prop_divergent <- results$num_divergent / nrow(data.frame(results$mod))
 
-    results$monitor <- rstan::monitor(as.array(results$mod))
+    if(results$num_divergent > 0) {
+
+      results$divergent <- rstan::get_divergent_iterations(results$mod$stanfit)
+
+    }
+
+    results$summary <- summary(results$mod$stanfit
+                               , probs = c(0.1, 0.5, 0.9)
+                               ) %>%
+      `[[`("summary") %>%
+      tibble::as_tibble(rownames = "parameter")
 
     # values of 1.05 and 100 (used below) taken from printout associated with rstan::monitor
 
-    results$check_monitor <- as_tibble(results$monitor) %>%
-      dplyr::select(Rhat, Bulk_ESS, Tail_ESS) %>%
+    results$check_summary <- results$summary %>%
+      dplyr::select(Rhat, n_eff) %>%
       tidyr::pivot_longer(everything()
                           , names_to = "diagnostic"
                           ) %>%
       dplyr::mutate(fail = dplyr::case_when(diagnostic == "Rhat" ~ value >= 1.05
-                                            , grepl("ESS", diagnostic) ~ value < 100
+                                            , diagnostic == "n_eff" ~ value < 100
                                             , TRUE ~ NA
                                             )
                     ) %>%
@@ -235,15 +245,16 @@ make_mod_res <- function(mod_file
                          ) %>%
         dplyr::inner_join(pred_at) %>%
         tidybayes::add_epred_draws(results$mod
-                                   , ...
+                                   #, ...
                                    , value = "pred"
 
                                    # used in testing
-                                   # , re_formula = NULL
-                                   # , allow.new.levels = TRUE
-                                   # , sample_new_levels = "uncertainty"
+                                   , re_formula = NULL
+                                   , allow.new.levels = TRUE
+                                   , sample_new_levels = "uncertainty"
 
                                    ) %>%
+        {if(results$num_divergent > 0) (.) %>% dplyr::mutate(divergent = results$divergent) else (.)} %>%
         dplyr::ungroup()
 
       if(ref < 0) {
@@ -298,11 +309,31 @@ make_mod_res <- function(mod_file
         dplyr::ungroup() %>%
         tidyr::unnest(cols = c(pred, diff))
 
-    }
+      if(results$num_divergent > 0) {
 
-    results$n_data <- nrow(results$mod$data)
-    results$n_fixed_coefs <- length(results$mod$coefficients[!grepl(paste0("b\\[|", random_col), names(results$mod$coefficients))])
-    results$n_random_coefs <- length(results$mod$coefficients[grepl(paste0("b\\[|", random_col), names(results$mod$coefficients))])
+        results$res_divergent <- results$pred %>%
+          dplyr::group_by(dplyr::across(any_of(c(cat_col
+                                                 , random_col
+                                                 , var_col
+                                                 , cov_col
+                                                 )
+                                               )
+                                        )
+                          , divergent
+                          ) %>%
+          dplyr::summarise(n_draws = dplyr::n()
+                           , lower = sum(diff < 0) / n_draws
+                           , higher = sum(diff > 0) / n_draws
+                           , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
+                           , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
+                             setNames(paste0("diff_", names(.)))
+                           ) %>%
+          dplyr::ungroup() %>%
+          tidyr::unnest(cols = c(pred, diff))
+
+      }
+
+    }
 
     if(!keep_pred) results$pred <- NULL
     if(!keep_mod) results$mod <- NULL

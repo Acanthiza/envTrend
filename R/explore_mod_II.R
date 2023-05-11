@@ -6,7 +6,7 @@
 #' other rstanarm models? Not sure anymore.
 #'
 #' @param model_results List. results from `make_ll_model()`
-#' @param taxa
+#' @param plot_title Character. Title used on all plots.
 #' @param common
 #' @param max_levels
 #' @param recent
@@ -15,28 +15,23 @@
 #' @param diff_category
 #' @param diff_direction
 #' @param do_gc
-#' @param plot_divergent Logical. If there are divergent transitions, generate
-#' pairs plots? Can be very slow with many samples.
-#' @param divergent_thresh Proportion of divergent transitions above which model
-#' results will not be generated. Really, this should be 0. Default 0.001.
 #'
 #' @return
 #' @export
 #'
 #' @examples
   explore_mod_ll <- function(model_results
-                             , taxa
-                             , common
+                             , plot_title = NULL
                              , max_levels = 15
                              , recent = as.numeric(format(Sys.Date(), "%Y")) - 2
                              , limit_preds = TRUE
-                             , plot_draws = 200
+                             , plot_draws = 500
                              , diff_category = NULL
                              , diff_direction = c("lower", "higher")
                              , do_gc = TRUE
-                             , plot_divergent = FALSE
-                             , divergent_thresh = 0.001
                              ) {
+
+    if(is.null(plot_title)) plot_title <- ""
 
     diff_direction <- diff_direction[1]
 
@@ -56,13 +51,10 @@
 
     where <- tidyselect:::where
 
-    taxa <- as.character(taxa)
-    common <- as.character(common)
 
+    # divergent plots------
 
-    # divergent plots?------
-
-    if(all(results$num_divergent > 0, plot_divergent)) {
+    if(results$num_divergent > 0) {
 
       np_cp <- bayesplot::nuts_params(mod$stanfit)
 
@@ -82,33 +74,14 @@
 
       results$paracord <- bayesplot::mcmc_parcoord(as.array(mod)
                                                    , np = np_cp
-                                                   )
+                                                   ) +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-      if(length(grep("^b"
-                     , names(mod$coefficients)
-                     , value = TRUE
-                     )
-                ) > 0
-         ) {
-
-        results$divergent_params_plot_random <- bayesplot::mcmc_pairs(as.array(mod)
-                                                                      , np = np_cp
-                                                                      , pars = grep("^b"
-                                                                                    , names(mod$coefficients)
-                                                                                    , value = TRUE
-                                                                                    , invert = FALSE
-                                                                                    )
-                                                                      , off_diag_args = list(size = 0.75)
-                                                                      )
-
-      }
 
     }
 
 
     # setup explore-------
-
-    plot_titles <- bquote(~italic(.(taxa))*":" ~ .(common))
 
     results$has_cov <- sum(grepl("cov"
                         , names(mod$coefficients)
@@ -176,7 +149,7 @@
                                                            , hjust = 1
                                                            )
                        ) +
-        ggplot2::labs(title = plot_titles
+        ggplot2::labs(title = plot_title
                       , subtitle = "Count of levels within character variables"
                       )
 
@@ -204,7 +177,7 @@
                                                 , vjust = 0.5
                                                 )
                        ) +
-        ggplot2::labs(title = plot_titles
+        ggplot2::labs(title = plot_title
                       , subtitle = paste0("Boxplots of response variable ("
                                           , resp_var
                                           , ") against character variables"
@@ -228,7 +201,7 @@
         ggplot2::facet_wrap(~ .data$variable
                             , scales = "free"
                             ) +
-        ggplot2::labs(title = plot_titles
+        ggplot2::labs(title = plot_title
                       , subtitle = "Histograms of numeric variables"
                       )
 
@@ -250,7 +223,7 @@
                                                            , vjust = 0.5
                                                            )
                        ) +
-        ggplot2::labs(title = plot_titles
+        ggplot2::labs(title = plot_title
                       , subtitle = paste0("Numeric variables plotted against response variable ("
                                           , resp_var
                                           , ")"
@@ -477,8 +450,10 @@
                          ) +
       ggplot2::geom_line(ggplot2::aes(y = .data$pred
                                       , group = .data$.draw
+                                      , linetype = if(results$num_divergent > 0) divergent else 1
                                       )
                          , alpha = 0.5
+                         , size = 1.5
                          ) +
       ggplot2::geom_vline(xintercept = tests$year
                           , linetype = 2
@@ -490,8 +465,9 @@
                                                 , hjust = 1
                                                 )
                      ) +
-      ggplot2::labs(title = plot_titles
+      ggplot2::labs(title = plot_title
                     , subtitle = sub_title_line
+                    , linetype = if(results$num_divergent > 0) "divergent" else NA
                     )
 
     if(results$has_cov) {
@@ -529,7 +505,7 @@
     #------res plot_ribbon-------
 
     p <- ggplot2::ggplot() +
-      ggplot2::geom_ribbon(data = res
+      ggplot2::geom_ribbon(data = if(results$num_divergent > 0) res_divergent else res
                            , ggplot2::aes(.data[[var_col]]
                                           , .data[[paste0("q", median(100 * res_q))]]
                                           , ymin = .data[[paste0("q"
@@ -546,6 +522,8 @@
                                                                                     )
                                                                  )
                                                           ]]
+                                          , linetype = if(results$num_divergent > 0) divergent else 1
+                                          , fill = if(results$num_divergent > 0) divergent else NA
                                           )
                            , alpha = 0.4
                   ) +
@@ -553,8 +531,8 @@
                          , ggplot2::aes(.data[[var_col]]
                                         , .data[[paste0("q", median(100 * res_q))]]
                                         )
-                         , linetype = 1
-                         , size = 1.5
+                         #, linetype = 1
+                         #, size = 1.5
                          , alpha = 0.6
                          ) +
       ggplot2::geom_vline(xintercept = tests$year
@@ -562,8 +540,10 @@
                           , colour = "red"
                           ) +
       ggplot2::facet_wrap(facet_form) +
-      ggplot2::labs(title = plot_titles
+      ggplot2::labs(title = plot_title
                     , subtitle = sub_title_ribbon
+                    , linetype = if(results$num_divergent > 0) "divergent" else NA
+                    , fill = if(results$num_divergent > 0) "divergent" else NA
                     )
 
     if(results$has_cov) {
@@ -601,7 +581,6 @@
 
     plot_data <- pred %>%
       dplyr::filter(!!rlang::ensym(var_col) == max(recent, na.rm = TRUE)) %>%
-      dplyr::group_by(dplyr::across(tidyselect::any_of(cat_col))) %>%
       dplyr::left_join(res %>%
                          dplyr::filter(!!rlang::ensym(var_col) == max(recent, na.rm = TRUE)) %>%
                          envFunc::add_likelihood({{ diff_direction }})
@@ -614,7 +593,7 @@
         diff_category <- "all"
 
         plot_data <- plot_data %>%
-          dplyr::mutate(all := "all")
+          dplyr::mutate(all = "all")
 
       }
 
@@ -631,7 +610,7 @@
                    ) +
         ggplot2::scale_fill_viridis_d(drop = FALSE)  +
         ggplot2::facet_wrap(facet_form) +
-        ggplot2::labs(title = plot_titles
+        ggplot2::labs(title = plot_title
                       , subtitle = paste0("Difference in "
                                           , max(recent, na.rm = TRUE)
                                           , " compared to "
@@ -639,7 +618,10 @@
                                           )
                       , x = "Difference"
                       #, y = "IBRA Subregion"
-                      , fill = "Likelihood of decrease"
+                      , fill = paste0("Likelihood of "
+                                      , if(diff_direction == "higher") "increase"
+                                      , if(diff_direction == "lower") "decrease"
+                                      )
                       , caption = paste0("Red dotted line indicates no change between "
                                          , reference
                                          , " and "

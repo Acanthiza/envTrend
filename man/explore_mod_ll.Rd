@@ -6,27 +6,22 @@
 \usage{
 explore_mod_ll(
   model_results,
-  taxa,
-  common,
+  plot_title = NULL,
   max_levels = 15,
   recent = as.numeric(format(Sys.Date(), "\%Y")) - 2,
   limit_preds = TRUE,
-  plot_draws = 200,
+  plot_draws = 500,
   diff_category = NULL,
   diff_direction = c("lower", "higher"),
-  do_gc = TRUE,
-  plot_divergent = FALSE,
-  divergent_thresh = 0.001
+  do_gc = TRUE
 )
 }
 \arguments{
 \item{model_results}{List. results from \code{make_ll_model()}}
 
-\item{plot_divergent}{Logical. If there are divergent transitions, generate
-pairs plots? Can be very slow with many samples.}
+\item{plot_title}{Character. Title used on all plots.}
 
-\item{divergent_thresh}{Proportion of divergent transitions above which model
-results will not be generated. Really, this should be 0. Default 0.001.}
+\item{do_gc}{}
 }
 \value{
 

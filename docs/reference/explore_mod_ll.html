@@ -123,17 +123,14 @@ other rstanarm models? Not sure anymore.</p>
 
     <pre class="usage"><span class='fu'>explore_mod_ll</span><span class='op'>(</span>
   <span class='va'>model_results</span>,
-  <span class='va'>taxa</span>,
-  <span class='va'>common</span>,
+  plot_title <span class='op'>=</span> <span class='cn'>NULL</span>,
   max_levels <span class='op'>=</span> <span class='fl'>15</span>,
   recent <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/numeric.html'>as.numeric</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/format.html'>format</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Sys.time.html'>Sys.Date</a></span><span class='op'>(</span><span class='op'>)</span>, <span class='st'>"%Y"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>2</span>,
   limit_preds <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  plot_draws <span class='op'>=</span> <span class='fl'>200</span>,
+  plot_draws <span class='op'>=</span> <span class='fl'>500</span>,
   diff_category <span class='op'>=</span> <span class='cn'>NULL</span>,
   diff_direction <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"lower"</span>, <span class='st'>"higher"</span><span class='op'>)</span>,
-  do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  plot_divergent <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  divergent_thresh <span class='op'>=</span> <span class='fl'>0.001</span>
+  do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -144,14 +141,12 @@ other rstanarm models? Not sure anymore.</p>
       <td><p>List. results from <code><a href='make_ll_model.html'>make_ll_model()</a></code></p></td>
     </tr>
     <tr>
-      <th>plot_divergent</th>
-      <td><p>Logical. If there are divergent transitions, generate
-pairs plots? Can be very slow with many samples.</p></td>
+      <th>plot_title</th>
+      <td><p>Character. Title used on all plots.</p></td>
     </tr>
     <tr>
-      <th>divergent_thresh</th>
-      <td><p>Proportion of divergent transitions above which model
-results will not be generated. Really, this should be 0. Default 0.001.</p></td>
+      <th>do_gc</th>
+      <td></td>
     </tr>
     </table>
 
