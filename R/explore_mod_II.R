@@ -31,6 +31,8 @@
                              , do_gc = TRUE
                              ) {
 
+    if(!is.numeric(plot_draws)) plot_draws <- model_results$ndraws
+
     if(is.null(plot_title)) plot_title <- ""
 
     diff_direction <- diff_direction[1]
@@ -395,7 +397,7 @@
       , if(results$has_cov) {
 
         paste0("\nLines are "
-               , ndraws
+               , plot_draws
                , " draws from posterior distribution.\n"
                , cov_text
                )
@@ -403,7 +405,7 @@
       } else {
 
         paste0("\nLines are "
-               , ndraws
+               , plot_draws
                , " draws from posterior distribution."
                )
 
@@ -452,8 +454,6 @@
                                       , group = .data$.draw
                                       , linetype = if(results$num_divergent > 0) divergent else 1
                                       )
-                         , alpha = 0.5
-                         , size = 1.5
                          ) +
       ggplot2::geom_vline(xintercept = tests$year
                           , linetype = 2
