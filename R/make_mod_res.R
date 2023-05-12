@@ -76,9 +76,8 @@ make_mod_res <- function(mod_file
 
     }
 
-    results$summary <- summary(results$mod$stanfit
-                               , probs = c(0.1, 0.5, 0.9)
-                               ) %>%
+    results$summary <- results$mod$stanfit %>%
+      rstan::summary(probs = c(0.1, 0.5, 0.9)) %>%
       `[[`(1) %>%
       tibble::as_tibble(rownames = "parameter")
 
