@@ -70,11 +70,7 @@ make_mod_res <- function(mod_file
 
     results$prop_divergent <- results$num_divergent / nrow(data.frame(results$mod))
 
-    if(results$num_divergent > 0) {
-
-      results$divergent <- rstan::get_divergent_iterations(results$mod$stanfit)
-
-    }
+    results$divergent <- rstan::get_divergent_iterations(results$mod$stanfit)
 
     results$summary <- results$mod$stanfit %>%
       rstan::summary(probs = c(0.1, 0.5, 0.9)) %>%
@@ -253,7 +249,7 @@ make_mod_res <- function(mod_file
                                    # , sample_new_levels = "uncertainty"
 
                                    ) %>%
-        {if(results$num_divergent > 0) (.) %>% dplyr::mutate(divergent = results$divergent) else (.)} %>%
+        dplyr::mutate(divergent = results$divergent) %>%
         dplyr::ungroup()
 
       if(ref < 0) {
@@ -308,29 +304,25 @@ make_mod_res <- function(mod_file
         dplyr::ungroup() %>%
         tidyr::unnest(cols = c(pred, diff))
 
-      if(results$num_divergent > 0) {
-
-        results$res_divergent <- results$pred %>%
-          dplyr::group_by(dplyr::across(any_of(c(cat_col
-                                                 , random_col
-                                                 , var_col
-                                                 , cov_col
-                                                 )
+      results$res_divergent <- results$pred %>%
+        dplyr::group_by(dplyr::across(any_of(c(cat_col
+                                               , random_col
+                                               , var_col
+                                               , cov_col
                                                )
-                                        )
-                          , divergent
-                          ) %>%
-          dplyr::summarise(n_draws = dplyr::n()
-                           , lower = sum(diff < 0) / n_draws
-                           , higher = sum(diff > 0) / n_draws
-                           , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
-                           , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
-                             setNames(paste0("diff_", names(.)))
-                           ) %>%
-          dplyr::ungroup() %>%
-          tidyr::unnest(cols = c(pred, diff))
-
-      }
+                                             )
+                                      )
+                        , divergent
+                        ) %>%
+        dplyr::summarise(n_draws = dplyr::n()
+                         , lower = sum(diff < 0) / n_draws
+                         , higher = sum(diff > 0) / n_draws
+                         , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
+                         , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
+                           setNames(paste0("diff_", names(.)))
+                         ) %>%
+        dplyr::ungroup() %>%
+        tidyr::unnest(cols = c(pred, diff))
 
     }
 

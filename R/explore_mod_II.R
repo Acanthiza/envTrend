@@ -452,8 +452,9 @@
                          ) +
       ggplot2::geom_line(ggplot2::aes(y = .data$pred
                                       , group = .data$.draw
-                                      , linetype = if(results$num_divergent > 0) divergent else 1
+                                      , linetype = .data$divergent
                                       )
+                         , alpha = 0.3
                          ) +
       ggplot2::geom_vline(xintercept = tests$year
                           , linetype = 2
@@ -467,7 +468,7 @@
                      ) +
       ggplot2::labs(title = plot_title
                     , subtitle = sub_title_line
-                    , linetype = if(results$num_divergent > 0) "divergent" else NA
+                    , linetype = "divergent"
                     )
 
     if(results$has_cov) {
@@ -495,6 +496,7 @@
                              , ggplot2::aes(x = .data[[var_col]]
                                            , y = .data[[resp_var]]
                                            )
+                            , colour = "blue"
                              )
 
     }
@@ -505,7 +507,7 @@
     #------res plot_ribbon-------
 
     p <- ggplot2::ggplot() +
-      ggplot2::geom_ribbon(data = if(results$num_divergent > 0) res_divergent else res
+      ggplot2::geom_ribbon(data = results$res_divergent
                            , ggplot2::aes(.data[[var_col]]
                                           , .data[[paste0("q", median(100 * res_q))]]
                                           , ymin = .data[[paste0("q"
@@ -522,8 +524,8 @@
                                                                                     )
                                                                  )
                                                           ]]
-                                          , linetype = if(results$num_divergent > 0) divergent else 1
-                                          , fill = if(results$num_divergent > 0) divergent else NA
+                                          , linetype = .data$divergent
+                                          , fill = .data$divergent
                                           )
                            , alpha = 0.4
                   ) +
@@ -531,9 +533,7 @@
                          , ggplot2::aes(.data[[var_col]]
                                         , .data[[paste0("q", median(100 * res_q))]]
                                         )
-                         #, linetype = 1
-                         #, size = 1.5
-                         , alpha = 0.6
+                         , alpha = 0.5
                          ) +
       ggplot2::geom_vline(xintercept = tests$year
                           , linetype = 2
@@ -542,8 +542,8 @@
       ggplot2::facet_wrap(facet_form) +
       ggplot2::labs(title = plot_title
                     , subtitle = sub_title_ribbon
-                    , linetype = if(results$num_divergent > 0) "divergent" else NA
-                    , fill = if(results$num_divergent > 0) "divergent" else NA
+                    , linetype = "divergent"
+                    , fill = "divergent"
                     )
 
     if(results$has_cov) {
@@ -570,6 +570,7 @@
                              , ggplot2::aes(.data[[var_col]]
                                             , .data[[resp_var]]
                                             )
+                            , colour = "blue"
                              )
 
     }
