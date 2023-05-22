@@ -9,8 +9,10 @@ make_mod_res(
   ref = -20,
   pred_step = 2,
   include_random = FALSE,
-  cov_q = c(0.5),
+  cov_q = NULL,
+  cov_val = NULL,
   res_q = c(0.1, 0.5, 0.9),
+  rope_range = "default",
   keep_mod = TRUE,
   keep_pred = TRUE,
   do_gc = TRUE,
@@ -26,9 +28,14 @@ to compare all values of \code{var_col} against \code{var_col + ref}.}
 
 \item{pred_step}{Numeric. What step (in units of \code{var_col}) to predict at?}
 
-\item{cov_q}{Numeric. What list lengths quantiles to predict at?}
+\item{cov_q}{Numeric. What quantiles of \code{cov} to predict at?}
+
+\item{cov_val}{Numeric. Alternative to cov_q. What value of \code{cov} to
+predict at?}
 
 \item{res_q}{Numeric. What quantiles to summarise predictions at?}
+
+\item{rope_range}{Passed to \code{bayestestR::rope()} \code{range} argument.}
 
 \item{keep_mod}{Logical. Return \code{mod} component of results (imported from
 \code{mod_file}). Saves memory if this is not returned.}

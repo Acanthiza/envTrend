@@ -9,8 +9,11 @@
 #' to use as a reference value or a negative integer on the scale of `var_col`
 #' to compare all values of `var_col` against `var_col + ref`.
 #' @param pred_step Numeric. What step (in units of `var_col`) to predict at?
-#' @param cov_q Numeric. What list lengths quantiles to predict at?
+#' @param cov_q Numeric. What quantiles of `cov` to predict at?
+#' @param cov_val Numeric. Alternative to cov_q. What value of `cov` to
+#' predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
+#' @param rope_range Passed to `bayestestR::rope()` `range` argument.
 #' @param keep_mod Logical. Return `mod` component of results (imported from
 #' `mod_file`). Saves memory if this is not returned.
 #' @param keep_pred Logical. Return `pred` component of results? Saves memory
@@ -41,8 +44,10 @@ make_mod_res <- function(mod_file
                          , ref = -20
                          , pred_step = 2
                          , include_random = FALSE
-                         , cov_q = c(0.5)
+                         , cov_q = NULL
+                         , cov_val = NULL
                          , res_q = c(0.1, 0.5, 0.9)
+                         , rope_range = "default"
                          , keep_mod = TRUE
                          , keep_pred = TRUE
                          , do_gc = TRUE
@@ -53,6 +58,9 @@ make_mod_res <- function(mod_file
                , as.list(environment())
                , list(...)
                )
+
+  # deal with beta
+  if(results$mod$family$family == "Beta regression") class(results$mod) <- c(class(results$mod), "betareg")
 
   results$res <- NULL
 
@@ -90,11 +98,12 @@ make_mod_res <- function(mod_file
                                             )
                     ) %>%
       dplyr::group_by(diagnostic) %>%
-      dplyr::summarise(parameters = n()
+      dplyr::summarise(parameters = dplyr::n()
                        , failed = sum(fail)
                        ) %>%
       dplyr::ungroup() %>%
       dplyr::mutate(pass = failed == 0)
+
 
     # deal with some of ... that are required elsewhere
     if(is.null(results[["ndraws"]])) results$ndraws <- nrow(tibble::as_tibble(results$mod))
@@ -103,16 +112,31 @@ make_mod_res <- function(mod_file
     # Deal with covariate, if needed
     if(!is.null(results$cov_col)) {
 
-      results$cov <- envFunc::quibble(results$mod$data$cov, cov_q) %>%
-        tidyr::pivot_longer(everything()
-                            , names_to = "cov_q"
-                            , values_to = "cov"
-                            ) %>%
-        dplyr::mutate(log_cov = log(cov)
-                      , cov_q = forcats::fct_reorder(cov_q
-                                                     , cov
-                                                     )
-                      )
+      if(!is.null(cov_q)) {
+
+        results$cov <- envFunc::quibble(results$mod$data$cov, cov_q) %>%
+          tidyr::pivot_longer(everything()
+                              , names_to = "cov_q"
+                              , values_to = "cov"
+                              ) %>%
+          dplyr::mutate(log_cov = log(cov)
+                        , cov_q = forcats::fct_reorder(cov_q
+                                                       , cov
+                                                       )
+                        )
+
+      }
+
+      if(!is.null(cov_val)) {
+
+        q_val <- round(100 * ecdf(results$mod$data$cov)(cov_val), 0)
+
+        results$cov <- tibble::tibble(cov_q = paste0("q", q_val)
+                                      , cov = cov_val
+                                      ) %>%
+          dplyr::mutate(log_cov = log(cov))
+
+      }
 
     }
 
@@ -297,12 +321,18 @@ make_mod_res <- function(mod_file
                          , n_draws = dplyr::n()
                          , lower = sum(diff < 0) / n_draws
                          , higher = sum(diff > 0) / n_draws
+                         , rope = bayestestR::rope(diff
+                                                   , range = rope_range
+                                                   )
                          , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
                          , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
                            setNames(paste0("diff_", names(.)))
                          ) %>%
         dplyr::ungroup() %>%
-        tidyr::unnest(cols = c(pred, diff))
+        tidyr::unnest(cols = c(pred, diff, rope)) %>%
+        dplyr::mutate(ROPE_lower = dplyr::if_else(diff_q50 < 0, 1 - ROPE_Percentage, 0)
+                      , ROPE_higher = dplyr::if_else(diff_q50 > 0, 1 - ROPE_Percentage, 0)
+                      )
 
       results$res_divergent <- results$pred %>%
         dplyr::group_by(dplyr::across(any_of(c(cat_col

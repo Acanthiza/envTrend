@@ -122,8 +122,10 @@
   ref <span class='op'>=</span> <span class='op'>-</span><span class='fl'>20</span>,
   pred_step <span class='op'>=</span> <span class='fl'>2</span>,
   include_random <span class='op'>=</span> <span class='cn'>FALSE</span>,
-  cov_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.5</span><span class='op'>)</span>,
+  cov_q <span class='op'>=</span> <span class='cn'>NULL</span>,
+  cov_val <span class='op'>=</span> <span class='cn'>NULL</span>,
   res_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
+  rope_range <span class='op'>=</span> <span class='st'>"default"</span>,
   keep_mod <span class='op'>=</span> <span class='cn'>TRUE</span>,
   keep_pred <span class='op'>=</span> <span class='cn'>TRUE</span>,
   do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>,
@@ -149,11 +151,20 @@ to compare all values of <code>var_col</code> against <code>var_col + ref</code>
     </tr>
     <tr>
       <th>cov_q</th>
-      <td><p>Numeric. What list lengths quantiles to predict at?</p></td>
+      <td><p>Numeric. What quantiles of <code>cov</code> to predict at?</p></td>
+    </tr>
+    <tr>
+      <th>cov_val</th>
+      <td><p>Numeric. Alternative to cov_q. What value of <code>cov</code> to
+predict at?</p></td>
     </tr>
     <tr>
       <th>res_q</th>
       <td><p>Numeric. What quantiles to summarise predictions at?</p></td>
+    </tr>
+    <tr>
+      <th>rope_range</th>
+      <td><p>Passed to <code><a href='https://easystats.github.io/bayestestR/reference/rope.html'>bayestestR::rope()</a></code> <code>range</code> argument.</p></td>
     </tr>
     <tr>
       <th>keep_mod</th>
