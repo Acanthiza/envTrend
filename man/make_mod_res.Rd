@@ -12,7 +12,7 @@ make_mod_res(
   cov_q = NULL,
   cov_val = NULL,
   res_q = c(0.1, 0.5, 0.9),
-  rope_range = "default",
+  diff_thresh = 0.05,
   keep_mod = TRUE,
   keep_pred = TRUE,
   do_gc = TRUE,
@@ -35,7 +35,9 @@ predict at?}
 
 \item{res_q}{Numeric. What quantiles to summarise predictions at?}
 
-\item{rope_range}{Passed to \code{bayestestR::rope()} \code{range} argument.}
+\item{diff_thresh}{Numeric. What quantile represents equivalence to zero?
+This is used to generate the likelihood of the effect being above or below
+zero (and is used equally above and below zero).}
 
 \item{keep_mod}{Logical. Return \code{mod} component of results (imported from
 \code{mod_file}). Saves memory if this is not returned.}

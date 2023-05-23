@@ -125,7 +125,7 @@
   cov_q <span class='op'>=</span> <span class='cn'>NULL</span>,
   cov_val <span class='op'>=</span> <span class='cn'>NULL</span>,
   res_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
-  rope_range <span class='op'>=</span> <span class='st'>"default"</span>,
+  diff_thresh <span class='op'>=</span> <span class='fl'>0.05</span>,
   keep_mod <span class='op'>=</span> <span class='cn'>TRUE</span>,
   keep_pred <span class='op'>=</span> <span class='cn'>TRUE</span>,
   do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>,
@@ -163,8 +163,10 @@ predict at?</p></td>
       <td><p>Numeric. What quantiles to summarise predictions at?</p></td>
     </tr>
     <tr>
-      <th>rope_range</th>
-      <td><p>Passed to <code><a href='https://easystats.github.io/bayestestR/reference/rope.html'>bayestestR::rope()</a></code> <code>range</code> argument.</p></td>
+      <th>diff_thresh</th>
+      <td><p>Numeric. What quantile represents equivalence to zero?
+This is used to generate the likelihood of the effect being above or below
+zero (and is used equally above and below zero).</p></td>
     </tr>
     <tr>
       <th>keep_mod</th>

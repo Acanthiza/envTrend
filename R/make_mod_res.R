@@ -13,7 +13,9 @@
 #' @param cov_val Numeric. Alternative to cov_q. What value of `cov` to
 #' predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
-#' @param rope_range Passed to `bayestestR::rope()` `range` argument.
+#' @param diff_thresh Numeric. What quantile represents equivalence to zero?
+#' This is used to generate the likelihood of the effect being above or below
+#' zero (and is used equally above and below zero).
 #' @param keep_mod Logical. Return `mod` component of results (imported from
 #' `mod_file`). Saves memory if this is not returned.
 #' @param keep_pred Logical. Return `pred` component of results? Saves memory
@@ -47,7 +49,8 @@ make_mod_res <- function(mod_file
                          , cov_q = NULL
                          , cov_val = NULL
                          , res_q = c(0.1, 0.5, 0.9)
-                         , rope_range = "default"
+                         , diff_thresh = 0.05
+                         #, sexit_args = list()
                          , keep_mod = TRUE
                          , keep_pred = TRUE
                          , do_gc = TRUE
@@ -254,6 +257,8 @@ make_mod_res <- function(mod_file
 
     if(nrow(pred_at) > 0) {
 
+      # Predictions #####
+
       pred <- results$mod$data %>%
         dplyr::distinct(dplyr::across(any_of(cat_col))) %>%
         dplyr::mutate(success = 0
@@ -305,9 +310,12 @@ make_mod_res <- function(mod_file
       results$pred <- pred %>%
         dplyr::left_join(ref_draw) %>%
         dplyr::mutate(diff = -1 * (ref - pred)
-                      , diff_prop = pred / ref
+                      , diff_sign = sign(diff)
+                      , diff_prop = diff / ref
                       )
 
+
+      # Results ####
       results$res <- results$pred %>%
         dplyr::group_by(dplyr::across(any_of(c(cat_col
                                                , random_col
@@ -319,19 +327,44 @@ make_mod_res <- function(mod_file
                         ) %>%
         dplyr::summarise(check = dplyr::n() - results$ndraws
                          , n_draws = dplyr::n()
-                         , lower = sum(diff < 0) / n_draws
-                         , higher = sum(diff > 0) / n_draws
-                         , rope = bayestestR::rope(diff
-                                                   , range = rope_range
-                                                   )
+
+                         , neg_raw = sum(diff_prop < 0) / n_draws
+                         , pos_raw = sum(diff_prop > 0) / n_draws
+
+                         , neg = sum(diff_prop < -diff_thresh) / n_draws
+                         , pos = sum(diff_prop > diff_thresh) / n_draws
+                         , zero = sum(diff_prop >= -diff_thresh & diff_prop <= diff_thresh) / n_draws
+
+                         # , sexit = pryr::do_call(bayestestR::sexit
+                         #                         , x = rlang::quo(diff_prop)
+                         #                         , sexit_args
+                         #                         )
+
                          , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
                          , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
                            setNames(paste0("diff_", names(.)))
+                         , diff_prop = envFunc::quibble(diff_prop, res_q, na.rm = TRUE) %>%
+                           setNames(paste0("diff_prop_", names(.)))
                          ) %>%
         dplyr::ungroup() %>%
-        tidyr::unnest(cols = c(pred, diff, rope)) %>%
-        dplyr::mutate(ROPE_lower = dplyr::if_else(diff_q50 < 0, 1 - ROPE_Percentage, 0)
-                      , ROPE_higher = dplyr::if_else(diff_q50 > 0, 1 - ROPE_Percentage, 0)
+        tidyr::unnest(cols = c(pred
+                               , contains("diff")
+                               # , sexit
+                               )
+                      ) %>%
+        dplyr::mutate(positive = dplyr::case_when(pos > neg & pos > zero ~ pos
+                                                  , neg > pos & neg > zero ~ 1 - neg
+                                                  , TRUE ~ 0.5
+                                                  )
+                      , positive = ifelse(is.na(pos_raw), NA, positive)
+
+                      , negative = dplyr::case_when(pos > neg & pos > zero ~ 1 - pos
+                                                  , neg > pos & neg > zero ~ neg
+                                                  , TRUE ~ 0.5
+                                                  )
+
+                      , negative = ifelse(is.na(pos_raw), NA, negative)
+
                       )
 
       results$res_divergent <- results$pred %>%
@@ -344,9 +377,8 @@ make_mod_res <- function(mod_file
                                       )
                         , divergent
                         ) %>%
-        dplyr::summarise(n_draws = dplyr::n()
-                         , lower = sum(diff < 0) / n_draws
-                         , higher = sum(diff > 0) / n_draws
+        dplyr::summarise(check = dplyr::n() - results$ndraws
+                         , n_draws = dplyr::n()
                          , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
                          , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
                            setNames(paste0("diff_", names(.)))
