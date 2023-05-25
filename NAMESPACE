@@ -2,6 +2,7 @@
 
 export("%>%")
 export(add_list_length)
+export(cat_plot)
 export(explore_mod)
 export(explore_mod_ll)
 export(filter_list_df)

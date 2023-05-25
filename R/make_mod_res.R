@@ -115,7 +115,18 @@ make_mod_res <- function(mod_file
     # Deal with covariate, if needed
     if(!is.null(results$cov_col)) {
 
-      if(!is.null(cov_q)) {
+      if(!is.null(cov_val)) {
+
+        q_val <- round(100 * ecdf(results$mod$data$cov)(cov_val), 0)
+
+        results$cov <- tibble::tibble(cov_q = paste0("q", q_val)
+                                      , cov = cov_val
+                                      ) %>%
+          dplyr::mutate(log_cov = log(cov))
+
+      } else {
+
+        if(is.null(cov_q)) cov_q <- 0.5
 
         results$cov <- envFunc::quibble(results$mod$data$cov, cov_q) %>%
           tidyr::pivot_longer(everything()
@@ -130,16 +141,7 @@ make_mod_res <- function(mod_file
 
       }
 
-      if(!is.null(cov_val)) {
 
-        q_val <- round(100 * ecdf(results$mod$data$cov)(cov_val), 0)
-
-        results$cov <- tibble::tibble(cov_q = paste0("q", q_val)
-                                      , cov = cov_val
-                                      ) %>%
-          dplyr::mutate(log_cov = log(cov))
-
-      }
 
     }
 

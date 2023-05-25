@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Explore (pre-) and (post-) results from make_mod_res after make_ll_model — explore_mod_ll • envTrend</title>
+<title>Plot with increasing credible range error bars decreasing in size around
+credible intervals — cat_plot • envTrend</title>
 
 
 <!-- jquery -->
@@ -39,10 +40,10 @@
 
 
 
-<meta property="og:title" content="Explore (pre-) and (post-) results from make_mod_res after make_ll_model — explore_mod_ll" />
-<meta property="og:description" content="General workflow is make the model (make_ll_model), make the model results
-(make_mod_res) then explore results (explore_mod_ll). Might work for
-other rstanarm models? Not sure anymore." />
+<meta property="og:title" content="Plot with increasing credible range error bars decreasing in size around
+credible intervals — cat_plot" />
+<meta property="og:description" content="Option to include original data. Currently needs columns q01, q05, q25,
+q50, q75, q95 and q99 in df." />
 
 
 
@@ -110,50 +111,60 @@ other rstanarm models? Not sure anymore." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Explore (pre-) and (post-) results from <code>make_mod_res</code> after <code>make_ll_model</code></h1>
-    <small class="dont-index">Source: <a href='https://github.com/Acanthiza/envTrend/blob/master/R/explore_mod_II.R'><code>R/explore_mod_II.R</code></a></small>
-    <div class="hidden name"><code>explore_mod_ll.Rd</code></div>
+    <h1>Plot with increasing credible range error bars decreasing in size around
+credible intervals</h1>
+    <small class="dont-index">Source: <a href='https://github.com/Acanthiza/envTrend/blob/master/R/cat_plot.R'><code>R/cat_plot.R</code></a></small>
+    <div class="hidden name"><code>cat_plot.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>General workflow is make the model (<code>make_ll_model</code>), make the model results
-(<code>make_mod_res</code>) then explore results (<code>explore_mod_ll</code>). Might work for
-other rstanarm models? Not sure anymore.</p>
+    <p>Option to include original data. Currently needs columns <code>q01</code>, <code>q05</code>, <code>q25</code>,
+<code>q50</code>, <code>q75</code>, <code>q95</code> and <code>q99</code> in <code>df</code>.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>explore_mod_ll</span><span class='op'>(</span>
-  <span class='va'>model_results</span>,
-  plot_title <span class='op'>=</span> <span class='cn'>NULL</span>,
-  max_levels <span class='op'>=</span> <span class='fl'>15</span>,
-  recent <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/numeric.html'>as.numeric</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/format.html'>format</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/Sys.time.html'>Sys.Date</a></span><span class='op'>(</span><span class='op'>)</span>, <span class='st'>"%Y"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>-</span> <span class='fl'>2</span>,
-  limit_preds <span class='op'>=</span> <span class='cn'>TRUE</span>,
-  plot_draws <span class='op'>=</span> <span class='fl'>500</span>,
-  diff_direction <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"pos"</span>, <span class='st'>"neg"</span><span class='op'>)</span>,
-  do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>
+    <pre class="usage"><span class='fu'>cat_plot</span><span class='op'>(</span>
+  <span class='va'>df</span>,
+  orig_data <span class='op'>=</span> <span class='cn'>NULL</span>,
+  y <span class='op'>=</span> <span class='st'>"prop"</span>,
+  x <span class='op'>=</span> <span class='st'>"year"</span>,
+  facet_col <span class='op'>=</span> <span class='st'>"LSA"</span>,
+  y_name <span class='op'>=</span> <span class='st'>"reporting rate"</span>,
+  likelihood_col <span class='op'>=</span> <span class='st'>"pos_raw"</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>model_results</th>
-      <td><p>List. results from <code><a href='make_ll_model.html'>make_ll_model()</a></code></p></td>
+      <th>df</th>
+      <td><p>Dataframe with <code>y</code>, <code>y_prop</code> etc</p></td>
     </tr>
     <tr>
-      <th>plot_title</th>
-      <td><p>Character. Title used on all plots.</p></td>
+      <th>orig_data</th>
+      <td><p>Dataframe with original data</p></td>
     </tr>
     <tr>
-      <th>do_gc</th>
-      <td></td>
+      <th>x, y</th>
+      <td><p>Chracter name of columns in <code>df</code> and <code>orig_data</code> with response
+variable</p></td>
+    </tr>
+    <tr>
+      <th>facet_col</th>
+      <td><p>Character name of column in <code>df</code> with a column to facet on.</p></td>
+    </tr>
+    <tr>
+      <th>y_name</th>
+      <td><p>Character. Name to give to <code>y</code> in plot</p></td>
+    </tr>
+    <tr>
+      <th>likelihood_col</th>
+      <td><p>Character name of column in <code>df</code> with likelihoods</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    
-
-
+    <p><code>ggplot</code></p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

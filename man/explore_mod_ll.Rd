@@ -11,8 +11,7 @@ explore_mod_ll(
   recent = as.numeric(format(Sys.Date(), "\%Y")) - 2,
   limit_preds = TRUE,
   plot_draws = 500,
-  diff_category = NULL,
-  diff_direction = c("lower", "higher"),
+  diff_direction = c("pos", "neg"),
   do_gc = TRUE
 )
 }

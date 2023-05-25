@@ -12,7 +12,6 @@
 #' @param recent
 #' @param limit_preds
 #' @param plot_draws
-#' @param diff_category
 #' @param diff_direction
 #' @param do_gc
 #'
@@ -26,8 +25,7 @@
                              , recent = as.numeric(format(Sys.Date(), "%Y")) - 2
                              , limit_preds = TRUE
                              , plot_draws = 500
-                             , diff_category = NULL
-                             , diff_direction = c("lower", "higher")
+                             , diff_direction = c("pos", "neg")
                              , do_gc = TRUE
                              ) {
 
@@ -36,8 +34,6 @@
     if(is.null(plot_title)) plot_title <- ""
 
     diff_direction <- diff_direction[1]
-
-    if(is.null(diff_category)) diff_category <- model_results$cat_col
 
     purrr::walk2(names(model_results)
                  , model_results
@@ -589,12 +585,16 @@
 
     if(nrow(plot_data) > 0) {
 
-      if(is.null(diff_category)) {
+      if(is.null(settings$cat_col)) {
 
         diff_category <- "all"
 
         plot_data <- plot_data %>%
           dplyr::mutate(all = "all")
+
+      } else {
+
+        diff_category <- settings$cat_col
 
       }
 
@@ -620,8 +620,8 @@
                       , x = "Difference"
                       #, y = "IBRA Subregion"
                       , fill = paste0("Likelihood of "
-                                      , if(diff_direction == "higher") "increase"
-                                      , if(diff_direction == "lower") "decrease"
+                                      , if(grepl("pos", diff_direction)) "increase"
+                                      , if(grepl("neg", diff_direction)) "decrease"
                                       )
                       , caption = paste0("Red dotted line indicates no change between "
                                          , reference
