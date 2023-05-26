@@ -93,7 +93,7 @@
 
       resp_var <- "prop"
 
-    } else y
+    } else resp_var <- y
 
 
     var_exp <- c(resp_var
@@ -421,7 +421,12 @@
                              , "recent", max(recent, na.rm = TRUE)
                              )
 
-    get_draws <- sort(sample(1 : (chains * iter), plot_draws))
+    get_draws <- sort(sample(1 : (length(results$mod$stanfit@stan_args) *
+                                    (results$mod$stanfit@stan_args[[1]]$iter - results$mod$stanfit@stan_args[[1]]$warmup)
+                                  )
+                             , plot_draws
+                             )
+                      )
 
     pred_plot_draws <- pred %>%
       dplyr::filter(.draw %in% get_draws)

@@ -12,7 +12,7 @@ make_mod_res(
   cov_q = NULL,
   cov_val = NULL,
   res_q = c(0.1, 0.5, 0.9),
-  diff_thresh = 0.05,
+  ps_thresh = 0.05,
   keep_mod = TRUE,
   keep_pred = TRUE,
   do_gc = TRUE,
@@ -35,9 +35,8 @@ predict at?}
 
 \item{res_q}{Numeric. What quantiles to summarise predictions at?}
 
-\item{diff_thresh}{Numeric. What quantile represents equivalence to zero?
-This is used to generate the likelihood of the effect being above or below
-zero (and is used equally above and below zero).}
+\item{ps_thresh}{Numeric value used in the \code{threshold} argument to
+\code{bayestestR::p_significance()}. Set to zero to return probability of direction}
 
 \item{keep_mod}{Logical. Return \code{mod} component of results (imported from
 \code{mod_file}). Saves memory if this is not returned.}

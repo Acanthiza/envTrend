@@ -125,7 +125,7 @@
   cov_q <span class='op'>=</span> <span class='cn'>NULL</span>,
   cov_val <span class='op'>=</span> <span class='cn'>NULL</span>,
   res_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
-  diff_thresh <span class='op'>=</span> <span class='fl'>0.05</span>,
+  ps_thresh <span class='op'>=</span> <span class='fl'>0.05</span>,
   keep_mod <span class='op'>=</span> <span class='cn'>TRUE</span>,
   keep_pred <span class='op'>=</span> <span class='cn'>TRUE</span>,
   do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>,
@@ -163,10 +163,9 @@ predict at?</p></td>
       <td><p>Numeric. What quantiles to summarise predictions at?</p></td>
     </tr>
     <tr>
-      <th>diff_thresh</th>
-      <td><p>Numeric. What quantile represents equivalence to zero?
-This is used to generate the likelihood of the effect being above or below
-zero (and is used equally above and below zero).</p></td>
+      <th>ps_thresh</th>
+      <td><p>Numeric value used in the <code>threshold</code> argument to
+<code><a href='https://easystats.github.io/bayestestR/reference/p_significance.html'>bayestestR::p_significance()</a></code>. Set to zero to return probability of direction</p></td>
     </tr>
     <tr>
       <th>keep_mod</th>

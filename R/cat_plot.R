@@ -85,14 +85,13 @@
 
        }
 
+       use_orig_data <- orig_data[orig_data[[x]] %in% unique(df_plot[[x]]),]
+
        p <- p +
-         geom_point(data = orig_data %>%
-                      dplyr::filter(!!rlang::ensym(x) %in% unique(df_plot[x]))
+         geom_point(data = use_orig_data
                     , aes(y = !!ensym(y))
-                    , colour = "black"
-                    , width = 0.2
-                    , height = 0.02
-                    #, alpha = 0.5
+                    , colour = "blue"
+                    , alpha = 0.25
                     )
 
      }

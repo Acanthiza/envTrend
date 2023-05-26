@@ -134,6 +134,21 @@ make_ll_model <- function(df
 
     } else "y"
 
+    if(exists("family", res)) {
+
+      if(grepl("Beta", res$family$family)) {
+
+        df <- df %>%
+          dplyr::mutate(y = dplyr::case_when(y == 0 ~ 0.000001
+                                             , y == 1 ~ 0.999999
+                                             , TRUE ~ y
+                                             )
+                        )
+
+      }
+
+    }
+
     mod_spec <- if(mod_type == "gam") {
 
       # gam spec-------
@@ -159,7 +174,7 @@ make_ll_model <- function(df
                , "var"
                , if(covs > 1) " + use_cov"
                , if(cats > 1) " + cat + var * cat"
-               , if(randoms > 1) paste0(" + ("
+               , if(rands > 1) paste0(" + ("
                                         , if(rand_slope) "var" else 1
                                         , " | rand)"
                                         )
@@ -269,5 +284,7 @@ make_ll_model <- function(df
     gc()
 
   }
+
+  return(invisible(NULL))
 
 }

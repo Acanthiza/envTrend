@@ -13,9 +13,8 @@
 #' @param cov_val Numeric. Alternative to cov_q. What value of `cov` to
 #' predict at?
 #' @param res_q Numeric. What quantiles to summarise predictions at?
-#' @param diff_thresh Numeric. What quantile represents equivalence to zero?
-#' This is used to generate the likelihood of the effect being above or below
-#' zero (and is used equally above and below zero).
+#' @param ps_thresh Numeric value used in the `threshold` argument to
+#' `bayestestR::p_significance()`. Set to zero to return probability of direction
 #' @param keep_mod Logical. Return `mod` component of results (imported from
 #' `mod_file`). Saves memory if this is not returned.
 #' @param keep_pred Logical. Return `pred` component of results? Saves memory
@@ -49,8 +48,7 @@ make_mod_res <- function(mod_file
                          , cov_q = NULL
                          , cov_val = NULL
                          , res_q = c(0.1, 0.5, 0.9)
-                         , diff_thresh = 0.05
-                         #, sexit_args = list()
+                         , ps_thresh = 0.05
                          , keep_mod = TRUE
                          , keep_pred = TRUE
                          , do_gc = TRUE
@@ -166,7 +164,7 @@ make_mod_res <- function(mod_file
     pred_var <- pred_var[pred_var > 0]
 
     pred_at <- results$mod$data %>%
-      dplyr::filter(y_total > 0) %>%
+      {if(stats::family(results$mod)$family == "binomial") (.) %>% dplyr::filter(y_total > 0) else (.)} %>%
       dplyr::distinct(dplyr::across(any_of(c(cat_col, var_col)))) %>%
       dplyr::group_by(dplyr::across(any_of(cat_col))) %>%
       dplyr::filter(!!rlang::ensym(var_col) == min(!!rlang::ensym(var_col)) |
@@ -311,9 +309,8 @@ make_mod_res <- function(mod_file
 
       results$pred <- pred %>%
         dplyr::left_join(ref_draw) %>%
-        dplyr::mutate(diff = -1 * (ref - pred)
-                      , diff_sign = sign(diff)
-                      , diff_prop = diff / ref
+        dplyr::mutate(diff = pred - ref
+                      , diff_prop = pred / ref
                       )
 
 
@@ -330,43 +327,38 @@ make_mod_res <- function(mod_file
         dplyr::summarise(check = dplyr::n() - results$ndraws
                          , n_draws = dplyr::n()
 
-                         , neg_raw = sum(diff_prop < 0) / n_draws
-                         , pos_raw = sum(diff_prop > 0) / n_draws
+                         , pd = as.numeric(bayestestR::pd(diff))
 
-                         , neg = sum(diff_prop < -diff_thresh) / n_draws
-                         , pos = sum(diff_prop > diff_thresh) / n_draws
-                         , zero = sum(diff_prop >= -diff_thresh & diff_prop <= diff_thresh) / n_draws
+                         , ps = pryr::do_call(bayestestR::p_significance
+                                                    , rlang::quo(diff)
+                                                    , threshold = ps_thresh
+                                                    ) %>%
+                           as.numeric
 
-                         # , sexit = pryr::do_call(bayestestR::sexit
-                         #                         , x = rlang::quo(diff_prop)
-                         #                         , sexit_args
-                         #                         )
+                         , diff_prop_gm = geo_mean(diff_prop)
 
                          , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
                          , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
                            setNames(paste0("diff_", names(.)))
-                         , diff_prop = envFunc::quibble(diff_prop, res_q, na.rm = TRUE) %>%
-                           setNames(paste0("diff_prop_", names(.)))
                          ) %>%
         dplyr::ungroup() %>%
         tidyr::unnest(cols = c(pred
+                               , pd
                                , contains("diff")
-                               # , sexit
+                               , contains("rope")
                                )
                       ) %>%
-        dplyr::mutate(positive = dplyr::case_when(pos > neg & pos > zero ~ pos
-                                                  , neg > pos & neg > zero ~ 1 - neg
-                                                  , TRUE ~ 0.5
+        dplyr::mutate(positive = dplyr::case_when(is.na(diff_q50) ~ NA_real_
+                                                  , sign(diff_q50) == 1 ~ ps
+                                                  , sign(diff_q50) == -1 ~ 1 - ps
+                                                  , TRUE ~ 0
                                                   )
-                      , positive = ifelse(is.na(pos_raw), NA, positive)
-
-                      , negative = dplyr::case_when(pos > neg & pos > zero ~ 1 - pos
-                                                  , neg > pos & neg > zero ~ neg
-                                                  , TRUE ~ 0.5
-                                                  )
-
-                      , negative = ifelse(is.na(pos_raw), NA, negative)
-
+                      , negative = dplyr::case_when(is.na(diff_q50) ~ NA_real_
+                                                    , sign(diff_q50) == -1 ~ ps
+                                                    , sign(diff_q50) == -1 ~ 1 - ps
+                                                    , TRUE ~ 0
+                                                    )
+                      , stable = 1 - positive - negative
                       )
 
       results$res_divergent <- results$pred %>%
