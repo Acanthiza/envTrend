@@ -590,7 +590,7 @@
 
     if(nrow(plot_data) > 0) {
 
-      if(is.null(settings$cat_col)) {
+      if(is.null(results$cat_col)) {
 
         diff_category <- "all"
 
@@ -599,7 +599,7 @@
 
       } else {
 
-        diff_category <- settings$cat_col
+        diff_category <- results$cat_col
 
       }
 
