@@ -617,11 +617,6 @@
         ggplot2::scale_fill_viridis_d(drop = FALSE)  +
         ggplot2::facet_wrap(facet_form) +
         ggplot2::labs(title = plot_title
-                      , subtitle = paste0("Difference in "
-                                          , max(recent, na.rm = TRUE)
-                                          , " compared to "
-                                          , reference
-                                          )
                       , x = "Difference"
                       #, y = "IBRA Subregion"
                       , fill = paste0("Likelihood of "
