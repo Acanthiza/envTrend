@@ -273,15 +273,15 @@
         ggplot2::scale_colour_viridis_d(end = 0.9)
 
 
-      results$resid_plot_norm <- ggplot(results$resid
-                                    , aes(residual)
-                                    ) +
+      results$resid_plot_norm <- ggplot2::ggplot(results$resid
+                                                 , ggplot2::aes(residual)
+                                                 ) +
         ggplot2::geom_function(fun = dnorm
                                , colour = "light blue"
                                , size = 1
-                              , args = list(mean = mean(results$resid$residual)
-                                            , sd = sd(results$resid$residual)
-                                            )
+                               , args = list(mean = mean(results$resid$residual)
+                                             , sd = sd(results$resid$residual)
+                                             )
                                ) +
         ggplot2::geom_density(colour = "dark blue"
                               , size = 1
