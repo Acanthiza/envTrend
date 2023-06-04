@@ -247,10 +247,9 @@ make_ll_model <- function(df
     )
 
 
-    # capture missing variables ------
-
     if(exists("mod")) {
 
+      # capture missing variables ------
       missing_names <- setdiff(names(df), names(mod$data))
 
       if(length(missing_names) > 0) {
@@ -271,6 +270,8 @@ make_ll_model <- function(df
       res$df <- df
       res$mod <- mod
 
+
+      # export ------
       rio::export(res
                   , mod_file
                   )

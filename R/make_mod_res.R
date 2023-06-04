@@ -115,7 +115,7 @@ make_mod_res <- function(mod_file
 
       if(!is.null(cov_val)) {
 
-        q_val <- round(100 * ecdf(results$mod$data$cov)(cov_val), 0)
+        q_val <- round(100 * ecdf(results$mod$data$cov)(unlist(cov_val)), 0)
 
         results$cov <- tibble::tibble(cov_q = paste0("q", q_val)
                                       , cov = cov_val
@@ -355,7 +355,7 @@ make_mod_res <- function(mod_file
                                                   )
                       , negative = dplyr::case_when(is.na(diff_q50) ~ NA_real_
                                                     , sign(diff_q50) == -1 ~ ps
-                                                    , sign(diff_q50) == -1 ~ 1 - ps
+                                                    , sign(diff_q50) == 1 ~ 1 - ps
                                                     , TRUE ~ 0
                                                     )
                       , stable = 1 - positive - negative

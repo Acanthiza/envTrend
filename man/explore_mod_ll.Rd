@@ -12,6 +12,7 @@ explore_mod_ll(
   limit_preds = TRUE,
   plot_draws = 500,
   diff_direction = c("pos", "neg"),
+  diff_category = NULL,
   do_gc = TRUE
 )
 }
@@ -19,6 +20,11 @@ explore_mod_ll(
 \item{model_results}{List. results from \code{make_ll_model()}}
 
 \item{plot_title}{Character. Title used on all plots.}
+
+\item{diff_category}{Character name of column in original data to condition
+on. If left as \code{NULL} will default to \code{cat_col} if there is more than one
+level, or new category \code{all} if there in not. Useful to condition on
+\code{random_col} if desired.}
 
 \item{do_gc}{}
 }

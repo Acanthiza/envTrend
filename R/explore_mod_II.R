@@ -13,6 +13,10 @@
 #' @param limit_preds
 #' @param plot_draws
 #' @param diff_direction
+#' @param diff_category Character name of column in original data to condition
+#' on. If left as `NULL` will default to `cat_col` if there is more than one
+#' level, or new category `all` if there in not. Useful to condition on
+#' `random_col` if desired.
 #' @param do_gc
 #'
 #' @return
@@ -26,6 +30,7 @@
                              , limit_preds = TRUE
                              , plot_draws = 500
                              , diff_direction = c("pos", "neg")
+                             , diff_category = NULL
                              , do_gc = TRUE
                              ) {
 
@@ -583,21 +588,20 @@
 
     plot_data <- pred %>%
       dplyr::filter(!!rlang::ensym(var_col) == max(recent, na.rm = TRUE)) %>%
-      dplyr::left_join(res %>%
-                         dplyr::filter(!!rlang::ensym(var_col) == max(recent, na.rm = TRUE)) %>%
+      dplyr::inner_join(res %>%
                          envFunc::add_likelihood({{ diff_direction }})
                        )
 
     if(nrow(plot_data) > 0) {
 
-      if(is.null(results$cat_col)) {
+      if(all(is.null(results$cat_col), is.null(diff_category))) {
 
         diff_category <- "all"
 
         plot_data <- plot_data %>%
           dplyr::mutate(all = "all")
 
-      } else {
+      } else if (is.null(diff_category)) {
 
         diff_category <- results$cat_col
 
@@ -615,7 +619,6 @@
                    , colour = "red"
                    ) +
         ggplot2::scale_fill_viridis_d(drop = FALSE)  +
-        ggplot2::facet_wrap(facet_form) +
         ggplot2::labs(title = plot_title
                       , x = "Difference"
                       #, y = "IBRA Subregion"
@@ -623,11 +626,7 @@
                                       , if(grepl("pos", diff_direction)) "increase"
                                       , if(grepl("neg", diff_direction)) "decrease"
                                       )
-                      , caption = paste0("Red dotted line indicates no change between "
-                                         , reference
-                                         , " and "
-                                         , max(recent, na.rm = TRUE)
-                                         )
+                      , caption = paste0("Red dotted line indicates no change")
                       )
 
     }

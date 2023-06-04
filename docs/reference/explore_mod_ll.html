@@ -129,6 +129,7 @@ other rstanarm models? Not sure anymore.</p>
   limit_preds <span class='op'>=</span> <span class='cn'>TRUE</span>,
   plot_draws <span class='op'>=</span> <span class='fl'>500</span>,
   diff_direction <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"pos"</span>, <span class='st'>"neg"</span><span class='op'>)</span>,
+  diff_category <span class='op'>=</span> <span class='cn'>NULL</span>,
   do_gc <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span></pre>
 
@@ -142,6 +143,13 @@ other rstanarm models? Not sure anymore.</p>
     <tr>
       <th>plot_title</th>
       <td><p>Character. Title used on all plots.</p></td>
+    </tr>
+    <tr>
+      <th>diff_category</th>
+      <td><p>Character name of column in original data to condition
+on. If left as <code>NULL</code> will default to <code>cat_col</code> if there is more than one
+level, or new category <code>all</code> if there in not. Useful to condition on
+<code>random_col</code> if desired.</p></td>
     </tr>
     <tr>
       <th>do_gc</th>
