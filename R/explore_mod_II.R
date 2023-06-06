@@ -198,14 +198,16 @@
 
       # Count numeric
       results$count_num <- ggplot2::ggplot(data = plot_data
-                                       , ggplot2::aes(.data$value)
+                                       , ggplot2::aes(.data$value
+                                                      , y = after_stat(count)
+                                                      )
                                        ) +
-        ggplot2::geom_histogram() +
+        ggplot2::geom_density() +
         ggplot2::facet_wrap(~ .data$variable
                             , scales = "free"
                             ) +
         ggplot2::labs(title = plot_title
-                      , subtitle = "Histograms of numeric variables"
+                      , subtitle = "Count density function for numeric variables"
                       )
 
       # resp_var vs. Numeric
