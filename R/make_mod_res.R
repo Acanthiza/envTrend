@@ -152,8 +152,8 @@ make_mod_res <- function(mod_file
     }
 
     # Create new_data for pred
-    pred_var <- sort(unique(c(seq(min(results$mod$data[[results$var_col]], na.rm = TRUE)
-                                    , max(results$mod$data[[results$var_col]], na.rm = TRUE)
+    pred_var <- sort(unique(c(seq(min(results$mod$data$var, na.rm = TRUE)
+                                    , max(results$mod$data$var, na.rm = TRUE)
                                     , pred_step
                                     )
                                 , ref
@@ -161,35 +161,54 @@ make_mod_res <- function(mod_file
                               )
                        )
 
-    pred_var <- pred_var[pred_var > 0]
+    if(ref < 0) {
+
+      # This is still a bit of a hack.
+
+      if(min(pred_var) == ref) {
+
+        pred_var <- pred_var[pred_var != ref]
+
+      }
+
+    }
+
 
     pred_at <- results$mod$data %>%
       {if(stats::family(results$mod)$family == "binomial") (.) %>% dplyr::filter(y_total > 0) else (.)} %>%
-      dplyr::distinct(dplyr::across(any_of(c(cat_col, var_col)))) %>%
-      dplyr::group_by(dplyr::across(any_of(cat_col))) %>%
-      dplyr::filter(!!rlang::ensym(var_col) == min(!!rlang::ensym(var_col)) |
-                      !!rlang::ensym(var_col) == max(!!rlang::ensym(var_col))
+      dplyr::distinct(dplyr::across(any_of(c("cat", "var")))) %>%
+      dplyr::group_by(dplyr::across(any_of("cat"))) %>%
+      dplyr::filter(var == min(var) |
+                      var == max(var)
                     ) %>%
-      dplyr::mutate(minmax = dplyr::case_when(!!rlang::ensym(var_col) == min(!!rlang::ensym(var_col)) ~ "min"
-                                              , !!rlang::ensym(var_col) == max(!!rlang::ensym(var_col)) ~ "max"
+      dplyr::mutate(minmax = dplyr::case_when(var == min(var) ~ "min"
+                                              , var == max(var) ~ "max"
                                               , TRUE ~ "neither"
                                               )
                     ) %>%
       dplyr::ungroup() %>%
-      tidyr::pivot_wider(values_from = !!rlang::ensym(var_col)
+      tidyr::pivot_wider(values_from = "var"
                          , names_from = "minmax"
                          ) %>%
       na.omit() %>%
-      dplyr::left_join(tibble::tibble(!!rlang::ensym(var_col) := pred_var)
-                       , by = character()
+      dplyr::left_join(results$mod$data %>%
+                         dplyr::filter(var %in% pred_var) %>%
+                         dplyr::distinct(dplyr::across(tidyselect::any_of(c("var"
+                                                                            , var_col
+                                                                            , "cat"
+                                                                            , cat_col
+                                                                            )
+                                                                          )
+                                                       )
+                                         )
                        )
 
     if(!is.null(cat_col)) {
 
       pred_at <- pred_at %>%
         dplyr::group_by(!!rlang::ensym(cat_col)) %>%
-        dplyr::filter(!!rlang::ensym(var_col) <= max
-                      , !!rlang::ensym(var_col) >= min
+        dplyr::filter(var <= max
+                      , var >= min
                       ) %>%
         dplyr::ungroup() %>%
         dplyr::select(-c(min, max))
@@ -240,11 +259,6 @@ make_mod_res <- function(mod_file
 
 
     # translate to generic terms in pred_at
-
-    if(!is.null(var_col)) pred_at["var"] <- pred_at[var_col]
-
-    if(!is.null(cat_col)) pred_at["cat"] <- pred_at[cat_col]
-
     if(!is.null(cov_col)) {
 
       pred_at[cov_col] <- pred_at$cov
@@ -264,7 +278,7 @@ make_mod_res <- function(mod_file
         dplyr::mutate(success = 0
                       , trials = 100
                       ) %>%
-        dplyr::left_join(tibble::tibble(!!rlang::ensym(var_col) := pred_var)
+        dplyr::left_join(tibble::tibble(var = pred_var)
                          , by = character()
                          ) %>%
         dplyr::inner_join(pred_at) %>%

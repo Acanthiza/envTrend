@@ -62,7 +62,7 @@ make_ll_model <- function(df
 
     df["y"] <- df[y]
     if(!is.null(y_total)) df["y_total"] <- df[y_total]
-    if(!is.null(var_col)) df["var"] <- df[var_col]
+    if(!is.null(var_col)) df["var"] <- median(df[var_col][[1]]) - df[var_col]
     if(!is.null(cat_col)) df["cat"] <- df[cat_col]
     if(!is.null(random_col)) df["rand"] <- df[random_col]
 
