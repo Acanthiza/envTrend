@@ -139,8 +139,6 @@ make_mod_res <- function(mod_file
 
       }
 
-
-
     }
 
     # Deal with response variable if family is binomial (probably doesn't work where weights argument is used instead of cbind?)
@@ -152,14 +150,14 @@ make_mod_res <- function(mod_file
     }
 
     # Create new_data for pred
-    pred_var <- sort(unique(c(seq(min(results$mod$data$var, na.rm = TRUE)
-                                    , max(results$mod$data$var, na.rm = TRUE)
-                                    , pred_step
-                                    )
-                                , ref
-                                )
-                              )
-                       )
+    var_min <- min(results$mod$data$var[results$mod$data$success > 0])
+    var_max <- max(results$mod$data$var[results$mod$data$success > 0])
+
+    pred_var <- seq(var_min
+                    , var_max
+                    , pred_step
+                    ) %>%
+      c(ref)
 
     if(ref < 0) {
 
@@ -173,53 +171,24 @@ make_mod_res <- function(mod_file
 
     }
 
-
     pred_at <- results$mod$data %>%
-      {if(stats::family(results$mod)$family == "binomial") (.) %>% dplyr::filter(y_total > 0) else (.)} %>%
-      dplyr::distinct(dplyr::across(any_of(c("cat", "var")))) %>%
-      dplyr::group_by(dplyr::across(any_of("cat"))) %>%
-      dplyr::filter(var == min(var) |
-                      var == max(var)
-                    ) %>%
-      dplyr::mutate(minmax = dplyr::case_when(var == min(var) ~ "min"
-                                              , var == max(var) ~ "max"
-                                              , TRUE ~ "neither"
-                                              )
-                    ) %>%
-      dplyr::ungroup() %>%
-      tidyr::pivot_wider(values_from = "var"
-                         , names_from = "minmax"
-                         ) %>%
-      na.omit() %>%
-      dplyr::left_join(results$mod$data %>%
-                         dplyr::filter(var %in% pred_var) %>%
-                         dplyr::distinct(dplyr::across(tidyselect::any_of(c("var"
-                                                                            , var_col
-                                                                            , "cat"
-                                                                            , cat_col
-                                                                            )
-                                                                          )
-                                                       )
-                                         )
-                       )
+      dplyr::distinct(dplyr::across(tidyselect::any_of(c(var_col, "var")))) %>%
+      dplyr::filter(var %in% pred_var) %>%
+      dplyr::arrange(var) %>%
+      {if(stats::family(results$mod)$family == "binomial") (.) %>% dplyr::mutate(y = 0, y_total = 100) else (.)}
 
     if(!is.null(cat_col)) {
 
-      pred_at <- pred_at %>%
-        dplyr::group_by(!!rlang::ensym(cat_col)) %>%
-        dplyr::filter(var <= max
-                      , var >= min
-                      ) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-c(min, max))
-
-    } else {
-
-      pred_at <- pred_at %>%
-        dplyr::filter(!!rlang::ensym(var_col) <= max
-                      , !!rlang::ensym(var_col) >= min
-                      ) %>%
-        dplyr::select(-c(min, max))
+      pred_at <- results$mod$data %>%
+        dplyr::distinct(dplyr::across(tidyselect::any_of(c("cat"
+                                                           , cat_col
+                                                           )
+                                                         )
+                                      )
+                        ) %>%
+        dplyr::left_join(pred_at
+                         , by = character()
+                         )
 
     }
 
@@ -273,15 +242,7 @@ make_mod_res <- function(mod_file
 
       # Predictions #####
 
-      pred <- results$mod$data %>%
-        dplyr::distinct(dplyr::across(any_of(cat_col))) %>%
-        dplyr::mutate(success = 0
-                      , trials = 100
-                      ) %>%
-        dplyr::left_join(tibble::tibble(var = pred_var)
-                         , by = character()
-                         ) %>%
-        dplyr::inner_join(pred_at) %>%
+      pred <- pred_at %>%
         tidybayes::add_epred_draws(results$mod
                                    , ...
                                    , value = "pred"
@@ -292,13 +253,13 @@ make_mod_res <- function(mod_file
                                    # , sample_new_levels = "uncertainty"
 
                                    ) %>%
-        dplyr::mutate(divergent = results$divergent) %>%
+        {if(length(.) == length(results$divergent)) (.) %>% dplyr::mutate(divergent = results$divergent) else (.)} %>%
         dplyr::ungroup()
 
       if(ref < 0) {
 
         ref_draw <- pred %>%
-          dplyr::mutate(!!rlang::ensym(var_col) := !!rlang::ensym(var_col) - ref) %>%
+          dplyr::mutate(var = var - ref) %>%
           dplyr::rename(ref = pred) %>%
           dplyr::select(tidyselect::any_of(c(cat_col, cov_col, var_col, random_col)) # do include var col here
                         , .draw
@@ -344,9 +305,9 @@ make_mod_res <- function(mod_file
                          , pd = as.numeric(bayestestR::pd(diff))
 
                          , ps = pryr::do_call(bayestestR::p_significance
-                                                    , rlang::quo(diff)
-                                                    , threshold = ps_thresh
-                                                    ) %>%
+                                              , rlang::quo(diff)
+                                              , threshold = ps_thresh
+                                              ) %>%
                            as.numeric
 
                          , diff_prop_gm = geo_mean(diff_prop)
@@ -375,24 +336,28 @@ make_mod_res <- function(mod_file
                       , stable = 1 - positive - negative
                       )
 
-      results$res_divergent <- results$pred %>%
-        dplyr::group_by(dplyr::across(any_of(c(cat_col
-                                               , random_col
-                                               , var_col
-                                               , cov_col
+      if("divergent" %in% names(pred)) {
+
+        results$res_divergent <- results$pred %>%
+          dplyr::group_by(dplyr::across(any_of(c(cat_col
+                                                 , random_col
+                                                 , var_col
+                                                 , cov_col
+                                                 )
                                                )
-                                             )
-                                      )
-                        , divergent
-                        ) %>%
-        dplyr::summarise(check = dplyr::n() - results$ndraws
-                         , n_draws = dplyr::n()
-                         , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
-                         , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
-                           setNames(paste0("diff_", names(.)))
-                         ) %>%
-        dplyr::ungroup() %>%
-        tidyr::unnest(cols = c(pred, diff))
+                                        )
+                          , divergent
+                          ) %>%
+          dplyr::summarise(check = dplyr::n() - results$ndraws
+                           , n_draws = dplyr::n()
+                           , pred = envFunc::quibble(pred, res_q, na.rm = TRUE)
+                           , diff = envFunc::quibble(diff, res_q, na.rm = TRUE) %>%
+                             setNames(paste0("diff_", names(.)))
+                           ) %>%
+          dplyr::ungroup() %>%
+          tidyr::unnest(cols = c(pred, diff))
+
+      }
 
     }
 
