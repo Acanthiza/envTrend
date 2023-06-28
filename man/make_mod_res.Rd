@@ -7,7 +7,7 @@
 make_mod_res(
   mod_file,
   ref = -20,
-  pred_step = 2,
+  pred_step = 1,
   include_random = FALSE,
   cov_q = NULL,
   cov_val = NULL,

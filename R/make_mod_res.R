@@ -43,7 +43,7 @@
 #' @examples
 make_mod_res <- function(mod_file
                          , ref = -20
-                         , pred_step = 2
+                         , pred_step = 1
                          , include_random = FALSE
                          , cov_q = NULL
                          , cov_val = NULL
@@ -54,6 +54,8 @@ make_mod_res <- function(mod_file
                          , do_gc = TRUE
                          , ...
                          ) {
+
+  print(gsub("\\.rds", "", basename(mod_file)))
 
   results <- c(rio::import(mod_file)
                , as.list(environment())
@@ -149,73 +151,69 @@ make_mod_res <- function(mod_file
 
     }
 
-    # Create new_data for pred
-    var_min <- min(results$mod$data$var[results$mod$data$success > 0])
-    var_max <- max(results$mod$data$var[results$mod$data$success > 0])
-
-    pred_var <- seq(var_min
-                    , var_max
-                    , pred_step
-                    ) %>%
-      c(ref)
-
-    if(ref < 0) {
-
-      # This is still a bit of a hack.
-
-      if(min(pred_var) == ref) {
-
-        pred_var <- pred_var[pred_var != ref]
-
-      }
-
-    }
-
-    pred_at <- results$mod$data %>%
-      dplyr::distinct(dplyr::across(tidyselect::any_of(c(var_col, "var")))) %>%
-      dplyr::filter(var %in% pred_var) %>%
-      dplyr::arrange(var) %>%
-      {if(stats::family(results$mod)$family == "binomial") (.) %>% dplyr::mutate(y = 0, y_total = 100) else (.)}
-
-    if(!is.null(cat_col)) {
-
-      pred_at <- results$mod$data %>%
-        dplyr::distinct(dplyr::across(tidyselect::any_of(c("cat"
-                                                           , cat_col
-                                                           )
-                                                         )
-                                      )
-                        ) %>%
-        dplyr::left_join(pred_at
-                         , by = character()
-                         )
-
-    }
-
-    if(!is.null(random_col)) {
+    #------ new data-------
+    rand_cols <- if(!is.null(results$random_col)) {
 
       if(include_random) {
 
-        random_pred <- dplyr::distinct(results$mod$data[random_col])
-
-      } else {
-
-        random_pred <- tibble::tibble(!!rlang::ensym(random_col) := factor(paste0(random_col
-                                                                                 , paste0("_"
-                                                                                          , results$sample_new_levels
-                                                                                          )
-                                                                                 )
-                                                                           )
-                                      )
+        c(random_col, "rand")
 
       }
 
-      pred_at <- pred_at %>%
-        dplyr::left_join(random_pred
-                         , by = character()
-                         )
+    }
+
+    rand_name <- if(!is.null(results$random_col)) {
+
+      if(!include_random) {
+
+        add_rand_name <- TRUE
+
+        paste0(results$random_col
+               , paste0("_"
+                        , results$sample_new_levels
+                        )
+               ) %>%
+          factor()
+
+      }
 
     }
+
+    if(!exists("add_rand_name")) add_rand_name <- FALSE
+
+    vars <- c(var_col
+              , "var"
+              , cat_col
+              , "cat"
+              , rand_cols
+              )
+
+    pred_at <- results$mod$data %>%
+      tibble::as_tibble() %>%
+      {if(stats::family(results$mod)$family == "binomial") (.) %>% dplyr::filter(y != 0) else (.)} %>%
+      dplyr::select(tidyselect::any_of(vars)) %>%
+      dplyr::distinct() %>%
+      dplyr::group_by(dplyr::across(tidyselect::any_of(vars[!vars %in% c("var", var_col)]))) %>%
+      dplyr::mutate(min = var == min(var)
+                    , max = var == max(var)
+                    ) %>%
+      dplyr::filter(var == min(var) | var == max(var)) %>%
+      dplyr::ungroup() %>%
+      tidyr::pivot_longer(c(min, max), names_to = "minmax") %>%
+      dplyr::filter(value) %>%
+      dplyr::select(-value, -var) %>%
+      tidyr::pivot_wider(names_from = minmax, values_from = !!rlang::ensym(var_col)) %>%
+      dplyr::mutate(!!rlang::ensym(var_col) := purrr::map2(min, max, seq, by = pred_step)) %>%
+      tidyr::unnest(cols = c(!!rlang::ensym(var_col))) %>%
+      dplyr::left_join(results$mod$data %>%
+                         dplyr::distinct(dplyr::across(tidyselect::any_of(c("var", var_col))))
+                       ) %>%
+      {if(stats::family(results$mod)$family == "binomial") (.) %>% dplyr::mutate(y = 0, y_total = 100) else (.)} %>%
+      {if(add_rand_name) (.) %>% dplyr::mutate(!!rlang::ensym(random_col) := rand_name) else (.)} %>%
+      dplyr::select(-min, -max)
+
+    #
+    pred_at$var <- zoo::na.approx(pred_at$var)
 
     if(!is.null(cov_col)) {
 
@@ -246,20 +244,14 @@ make_mod_res <- function(mod_file
         tidybayes::add_epred_draws(results$mod
                                    , ...
                                    , value = "pred"
-
-                                   # used in testing
-                                   # , re_formula = NULL
-                                   # , allow.new.levels = TRUE
-                                   # , sample_new_levels = "uncertainty"
-
                                    ) %>%
-        {if(length(.) == length(results$divergent)) (.) %>% dplyr::mutate(divergent = results$divergent) else (.)} %>%
+        {if(nrow(.) %% length(results$divergent) == 0) (.) %>% dplyr::mutate(divergent = results$divergent) else (.)} %>%
         dplyr::ungroup()
 
       if(ref < 0) {
 
         ref_draw <- pred %>%
-          dplyr::mutate(var = var - ref) %>%
+          dplyr::mutate(!!rlang::ensym(var_col) := !!rlang::ensym(var_col) - ref) %>%
           dplyr::rename(ref = pred) %>%
           dplyr::select(tidyselect::any_of(c(cat_col, cov_col, var_col, random_col)) # do include var col here
                         , .draw
