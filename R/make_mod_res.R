@@ -190,7 +190,6 @@ make_mod_res <- function(mod_file
 
     pred_at <- results$mod$data %>%
       tibble::as_tibble() %>%
-      {if(stats::family(results$mod)$family == "binomial") (.) %>% dplyr::filter(y != 0) else (.)} %>%
       dplyr::select(tidyselect::any_of(vars)) %>%
       dplyr::distinct() %>%
       dplyr::group_by(dplyr::across(tidyselect::any_of(vars[!vars %in% c("var", var_col)]))) %>%
@@ -212,7 +211,7 @@ make_mod_res <- function(mod_file
       {if(add_rand_name) (.) %>% dplyr::mutate(!!rlang::ensym(random_col) := rand_name) else (.)} %>%
       dplyr::select(-min, -max)
 
-    #
+    # Interpolate NAs in 'var'. These can result from years with no visits inbetween years with visits.
     pred_at$var <- zoo::na.approx(pred_at$var)
 
     if(!is.null(cov_col)) {
