@@ -438,12 +438,12 @@
     pred_plot_draws <- pred %>%
       dplyr::filter(.draw %in% get_draws)
 
-    facet_form <- if(any(cat_col %in% names(dat_exp)
+    facet_form <- if(any(if(!is.null(cat_col)) cat_col %in% names(dat_exp)
                          , if(!is.null(random_col)) random_col %in% names(dat_exp)
                          )
                      ) {
 
-      as.formula(paste0(if(cat_col %in% names(dat_exp)) cat_col
+      as.formula(paste0(if(!is.null(cat_col)) if(cat_col %in% names(dat_exp)) cat_col
                         , " ~ "
                         , if(!is.null(random_col)) {
 

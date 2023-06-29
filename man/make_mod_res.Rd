@@ -9,6 +9,7 @@ make_mod_res(
   ref = -20,
   pred_step = 1,
   include_random = FALSE,
+  new_level = "State",
   cov_q = NULL,
   cov_val = NULL,
   res_q = c(0.1, 0.5, 0.9),
@@ -27,6 +28,12 @@ to use as a reference value or a negative integer on the scale of \code{var_col}
 to compare all values of \code{var_col} against \code{var_col + ref}.}
 
 \item{pred_step}{Numeric. What step (in units of \code{var_col}) to predict at?}
+
+\item{include_random}{Logical. If there is a random effect in the original
+model, should the levels of that random effect be conditioned on? If not,
+provide \code{new_level} and a hypothetical new group will be provided.}
+
+\item{new_level}{Character. Name to assign to hypothetical new group.}
 
 \item{cov_q}{Numeric. What quantiles of \code{cov} to predict at?}
 

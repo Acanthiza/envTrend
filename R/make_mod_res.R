@@ -9,6 +9,10 @@
 #' to use as a reference value or a negative integer on the scale of `var_col`
 #' to compare all values of `var_col` against `var_col + ref`.
 #' @param pred_step Numeric. What step (in units of `var_col`) to predict at?
+#' @param include_random Logical. If there is a random effect in the original
+#' model, should the levels of that random effect be conditioned on? If not,
+#' provide `new_level` and a hypothetical new group will be provided.
+#' @param new_level Character. Name to assign to hypothetical new group.
 #' @param cov_q Numeric. What quantiles of `cov` to predict at?
 #' @param cov_val Numeric. Alternative to cov_q. What value of `cov` to
 #' predict at?
@@ -45,6 +49,7 @@ make_mod_res <- function(mod_file
                          , ref = -20
                          , pred_step = 1
                          , include_random = FALSE
+                         , new_level = "State"
                          , cov_q = NULL
                          , cov_val = NULL
                          , res_q = c(0.1, 0.5, 0.9)
@@ -110,7 +115,6 @@ make_mod_res <- function(mod_file
 
     # deal with some of ... that are required elsewhere
     if(is.null(results[["ndraws"]])) results$ndraws <- nrow(tibble::as_tibble(results$mod))
-    if(is.null(results[["sample_new_levels"]])) results$sample_new_levels <- "uncertainty" # default via tidybayes::add_epred_draws
 
     # Deal with covariate, if needed
     if(!is.null(results$cov_col)) {
@@ -168,12 +172,7 @@ make_mod_res <- function(mod_file
 
         add_rand_name <- TRUE
 
-        paste0(results$random_col
-               , paste0("_"
-                        , results$sample_new_levels
-                        )
-               ) %>%
-          factor()
+          factor(new_level)
 
       }
 

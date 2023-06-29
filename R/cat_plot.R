@@ -74,12 +74,22 @@
 
        if(facet_col %in% names(df_plot)) {
 
-         if(any(grepl("uncertainty|gaussian", as.character(levels(df_plot[facet_col]))))) {
+         if(any(grepl("uncertainty|gaussian"
+                      , df_plot %>%
+                      dplyr::pull(!!rlang::ensym(facet_col)) %>%
+                      unique() %>%
+                      as.character()
+                      )
+                )
+            ) {
 
-           use_facet <- as.character(unique(df_plot[facet_col]))
+           use_facet <- df_plot %>%
+             dplyr::pull(!!rlang::ensym(facet_col)) %>%
+             unique() %>%
+             as.character()
 
            orig_data <- orig_data %>%
-             dplyr::mutate(facet = use_facet)
+             dplyr::mutate(!!rlang::ensym(facet_col) := use_facet)
 
          }
 

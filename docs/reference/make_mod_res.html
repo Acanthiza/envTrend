@@ -122,6 +122,7 @@
   ref <span class='op'>=</span> <span class='op'>-</span><span class='fl'>20</span>,
   pred_step <span class='op'>=</span> <span class='fl'>1</span>,
   include_random <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  new_level <span class='op'>=</span> <span class='st'>"State"</span>,
   cov_q <span class='op'>=</span> <span class='cn'>NULL</span>,
   cov_val <span class='op'>=</span> <span class='cn'>NULL</span>,
   res_q <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span><span class='op'>)</span>,
@@ -148,6 +149,16 @@ to compare all values of <code>var_col</code> against <code>var_col + ref</code>
     <tr>
       <th>pred_step</th>
       <td><p>Numeric. What step (in units of <code>var_col</code>) to predict at?</p></td>
+    </tr>
+    <tr>
+      <th>include_random</th>
+      <td><p>Logical. If there is a random effect in the original
+model, should the levels of that random effect be conditioned on? If not,
+provide <code>new_level</code> and a hypothetical new group will be provided.</p></td>
+    </tr>
+    <tr>
+      <th>new_level</th>
+      <td><p>Character. Name to assign to hypothetical new group.</p></td>
     </tr>
     <tr>
       <th>cov_q</th>
