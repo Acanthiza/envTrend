@@ -589,6 +589,7 @@
     #------year difference plot--------
 
     plot_data <- pred %>%
+      dplyr::filter(!is.na(diff)) %>%
       dplyr::filter(!!rlang::ensym(var_col) == max(recent, na.rm = TRUE)) %>%
       dplyr::inner_join(res %>%
                          envFunc::add_likelihood({{ diff_direction }})
