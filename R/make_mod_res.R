@@ -235,6 +235,7 @@ make_mod_res <- function(mod_file
       # Predictions #####
 
       pred <- pred_at %>%
+        na.omit() %>%
         tidybayes::add_epred_draws(results$mod
                                    , ...
                                    , value = "pred"
