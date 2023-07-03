@@ -203,15 +203,11 @@ make_mod_res <- function(mod_file
       tidyr::pivot_wider(names_from = minmax, values_from = !!rlang::ensym(var_col)) %>%
       dplyr::mutate(!!rlang::ensym(var_col) := purrr::map2(min, max, seq, by = pred_step)) %>%
       tidyr::unnest(cols = c(!!rlang::ensym(var_col))) %>%
-      dplyr::left_join(results$mod$data %>%
-                         dplyr::distinct(dplyr::across(tidyselect::any_of(c("var", var_col))))
-                       ) %>%
+      dplyr::mutate(var = !!rlang::ensym(var_col) - stats::median(results$mod$data[var_col][[1]])) %>%
       {if(stats::family(results$mod)$family == "binomial") (.) %>% dplyr::mutate(y = 0, y_total = 100) else (.)} %>%
       {if(add_rand_name) (.) %>% dplyr::mutate(!!rlang::ensym(random_col) := rand_name) else (.)} %>%
       dplyr::select(-min, -max)
 
-    # Interpolate NAs in 'var'. These can result from years with no visits inbetween years with visits.
-    pred_at$var <- zoo::na.approx(pred_at$var)
 
     if(!is.null(cov_col)) {
 
