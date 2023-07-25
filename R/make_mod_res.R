@@ -60,7 +60,7 @@ make_mod_res <- function(mod_file
                          , ...
                          ) {
 
-  print(gsub("\\.rds", "", basename(mod_file)))
+  message(gsub("\\.rds", "", basename(mod_file)))
 
   results <- c(rio::import(mod_file)
                , as.list(environment())
