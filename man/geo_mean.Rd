@@ -11,9 +11,6 @@ geo_mean(x, na.rm = FALSE)
 
 \item{na.rm}{Remove any \code{NA} values prior to calculation}
 }
-\value{
-
-}
 \description{
 Defined as:
 \loadmathjax

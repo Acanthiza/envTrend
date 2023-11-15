@@ -17,6 +17,9 @@
 #' on. If left as `NULL` will default to `cat_col` if there is more than one
 #' level, or new category `all` if there in not. Useful to condition on
 #' `random_col` if desired.
+#' @param dot_col Character name of column in original data to colour the
+#' original data points by in model results plots. Default is the secondary `x`
+#' variable `cov_col`.
 #' @param do_gc
 #'
 #' @return
@@ -29,14 +32,16 @@
                              , recent = as.numeric(format(Sys.Date(), "%Y")) - 2
                              , limit_preds = TRUE
                              , plot_draws = 500
-                             , diff_direction = c("pos", "neg")
+                             , diff_direction = c("positive", "negative")
                              , diff_category = NULL
+                             , facet_col = cat_col
+                             , dot_col = cov_col
                              , do_gc = TRUE
                              ) {
 
     if(!is.numeric(plot_draws)) plot_draws <- model_results$ndraws
 
-    if(is.null(plot_title)) plot_title <- ""
+    if(!exists("plot_title")) plot_title <- ""
 
     diff_direction <- diff_direction[1]
 
@@ -101,13 +106,15 @@
     } else resp_var <- y
 
 
-    var_exp <- c(resp_var
-                 , cov_col
-                 , cat_col
-                 , var_col
-                 , y_total
-                 , if(include_random) random_col
-                 )
+    var_exp <- unique(c(resp_var
+                        , cov_col
+                        , cat_col
+                        , var_col
+                        , y_total
+                        , random_col
+                        , dot_col
+                        )
+                      )
 
 
     dat_exp <- mod$data %>%
@@ -370,10 +377,8 @@
 
     if(results$has_cov) {
 
-      cov_name <- gsub("_", " ", cov_col)
-
       cov_text <- paste0("At "
-                         , cov_name
+                         , gsub("_", " ", cov_col)
                          , " quantile "
                          , cov_q
                          , " = "
@@ -382,24 +387,20 @@
 
     }
 
-    sub_title <-  if(results$has_cov) {
+    if(exists("tests")) {
 
-      paste0("Dashed red lines indicate "
-             , var_col
-             , " for comparison (see text)."
-             )
-
-    } else {
-
-      paste0("Dashed red lines indicate years for comparison (see text).")
+      sub_title <-  paste0("Dashed red lines indicate "
+                           , var_col
+                           , " for comparison (see text)."
+                           )
 
     }
 
     sub_title_line <- paste0(
-      sub_title
+      if(exists("sub_title")) paste0(sub_title, "\n")
       , if(results$has_cov) {
 
-        paste0("\nLines are "
+        paste0("Lines are "
                , plot_draws
                , " draws from posterior distribution.\n"
                , cov_text
@@ -407,7 +408,7 @@
 
       } else {
 
-        paste0("\nLines are "
+        paste0("Lines are "
                , plot_draws
                , " draws from posterior distribution."
                )
@@ -415,18 +416,23 @@
       }
     )
 
-    sub_title_ribbon <- paste0(sub_title
-                               , "\nMedian (thick line) and 90% credible intervals (shaded)."
+    sub_title_ribbon <- paste0(if(exists("sub_title")) paste0(sub_title, "\n")
+                               , "Median (thick line) and 90% credible intervals (shaded)."
                                )
 
     #-------res plot_line-----------
 
-    reference <- max(recent, na.rm = TRUE) + ref
+    if(is.numeric(ref)) {
 
-    tests <- tibble::tribble(~type, ~year
-                             , "reference", reference
-                             , "recent", max(recent, na.rm = TRUE)
-                             )
+      reference <- max(recent, na.rm = TRUE) + ref
+
+      tests <- tibble::tribble(~type, ~year
+                               , "reference", reference
+                               , "recent", max(recent, na.rm = TRUE)
+                               )
+
+    }
+
 
     get_draws <- sort(sample(1 : (length(results$mod$stanfit@stan_args) *
                                     (results$mod$stanfit@stan_args[[1]]$iter - results$mod$stanfit@stan_args[[1]]$warmup)
@@ -438,20 +444,18 @@
     pred_plot_draws <- pred %>%
       dplyr::filter(.draw %in% get_draws)
 
-    facet_form <- if(any(if(!is.null(cat_col)) cat_col %in% names(dat_exp)
-                         , if(!is.null(random_col)) random_col %in% names(dat_exp)
-                         )
-                     ) {
+    if(!is.null(facet_col)) {
 
-      as.formula(paste0(if(!is.null(cat_col)) if(cat_col %in% names(dat_exp)) cat_col
-                        , " ~ "
-                        , if(!is.null(random_col)) {
+      facet_form <- as.formula(paste0(facet_col[1]
+                                      , " ~ "
+                                      , if(!is.na(facet_col[2])) {
 
-                          if(random_col %in% names(dat_exp))  random_col else "."
+                                        facet_col[2]
 
-                          } else "."
-                        )
-                 )
+                                        } else "."
+
+                                      )
+                               )
 
     } else NULL
 
@@ -464,10 +468,6 @@
                                       )
                          , alpha = 0.3
                          ) +
-      ggplot2::geom_vline(xintercept = tests$year
-                          , linetype = 2
-                          , colour = "red"
-                          ) +
       ggplot2::facet_wrap(facet_form) +
       ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90
                                                 , vjust = 0.5
@@ -479,7 +479,27 @@
                     , linetype = "divergent"
                     )
 
-    if(results$has_cov) {
+    if(exists("tests")) {
+
+      p <- p +
+        ggplot2::geom_vline(xintercept = tests$year
+                            , linetype = 2
+                            , colour = "red"
+                            )
+
+    }
+
+    if(!is.null(dot_col)) {
+
+      if("numeric" %in% class(dat_exp[[dot_col]])) {
+
+        scale_col <- ggplot2::scale_colour_viridis_c()
+
+      } else {
+
+        scale_col <- ggplot2::scale_colour_viridis_d()
+
+      }
 
       p <- p +
         ggplot2::geom_point(data = dat_exp %>%
@@ -488,11 +508,11 @@
                                                 )
                              , ggplot2::aes(x = .data[[var_col]]
                                            , y = .data[[resp_var]]
-                                           , colour = .data[[cov_col]]
+                                           , colour = .data[[dot_col]]
                                            )
                              ) +
-        ggplot2::scale_colour_viridis_c() +
-        ggplot2::labs(colour = cov_col)
+        scale_col +
+        ggplot2::labs(colour = dot_col)
 
     } else {
 
@@ -543,10 +563,6 @@
                                         )
                          , alpha = 0.5
                          ) +
-      ggplot2::geom_vline(xintercept = tests$year
-                          , linetype = 2
-                          , colour = "red"
-                          ) +
       ggplot2::facet_wrap(facet_form) +
       ggplot2::labs(title = plot_title
                     , subtitle = sub_title_ribbon
@@ -554,7 +570,27 @@
                     , fill = "divergent"
                     )
 
-    if(results$has_cov) {
+    if(exists("tests")) {
+
+      p <- p +
+        ggplot2::geom_vline(xintercept = tests$year
+                            , linetype = 2
+                            , colour = "red"
+                            )
+
+    }
+
+    if(!is.null(dot_col)) {
+
+      if("numeric" %in% class(dat_exp[[dot_col]])) {
+
+        scale_col <- ggplot2::scale_colour_viridis_c()
+
+      } else {
+
+        scale_col <- ggplot2::scale_colour_viridis_d()
+
+      }
 
       p <- p +
         ggplot2::geom_point(data = df %>%
@@ -563,10 +599,10 @@
                                                 )
                   , ggplot2::aes(.data[[var_col]]
                                  , .data[[resp_var]]
-                                 , colour = .data[[cov_col]]
+                                 , colour = .data[[dot_col]]
                                  )
                   ) +
-      ggplot2::scale_colour_viridis_c()
+      scale_col
 
     } else {
 
@@ -575,11 +611,11 @@
                               dplyr::inner_join(res %>%
                                                   dplyr::distinct(dplyr::across(tidyselect::any_of(var_col)))
                                                 )
-                             , ggplot2::aes(.data[[var_col]]
-                                            , .data[[resp_var]]
-                                            )
+                            , ggplot2::aes(.data[[var_col]]
+                                           , .data[[resp_var]]
+                                           )
                             , colour = "blue"
-                             )
+                            )
 
     }
 
@@ -590,7 +626,11 @@
 
     plot_data <- pred %>%
       dplyr::filter(!is.na(diff)) %>%
-      dplyr::filter(!!rlang::ensym(var_col) == max(recent, na.rm = TRUE)) %>%
+      {if(is.numeric(ref)) (.) %>%
+          dplyr::filter(!!rlang::ensym(var_col) == max(recent, na.rm = TRUE)) else
+            (.) %>%
+          dplyr::filter(!!rlang::ensym(var_col) == max(!!rlang::ensym(var_col), na.rm = TRUE))
+        } %>%
       dplyr::inner_join(res %>%
                          envFunc::add_likelihood({{ diff_direction }})
                        )
@@ -610,17 +650,20 @@
 
       }
 
-      results$year_diff_plot <- ggplot2::ggplot(data = plot_data
+      p <- ggplot2::ggplot(data = plot_data
                                             , ggplot2::aes(.data$diff
                                                            , .data[[diff_category]]
                                                            , fill = .data$likelihood
+                                                           #, height = ..density..
                                                            )
                                             ) +
-        ggridges::geom_density_ridges() +
-        ggplot2::geom_vline(xintercept = 0
-                   , linetype = 2
-                   , colour = "red"
-                   ) +
+        ggplot2::geom_ribbon(stat = "density"
+                            , outline.type = "upper"
+                            , aes(ymin = after_stat(group)
+                                  , ymax = after_stat(group + ndensity)
+                                  )
+                            , trim = TRUE
+                            ) +
         ggplot2::scale_fill_viridis_d(drop = FALSE)  +
         ggplot2::labs(title = plot_title
                       , x = "Difference"
@@ -628,9 +671,33 @@
                       , fill = paste0("Likelihood of "
                                       , if(grepl("pos", diff_direction)) "increase"
                                       , if(grepl("neg", diff_direction)) "decrease"
+                                      , "\nrelative to reference:"
+                                      , paste0("\n", ref)
                                       )
-                      , caption = paste0("Red dotted line indicates no change")
                       )
+
+      if(ps_thresh != 0) {
+
+        p <- p +
+          ggplot2::geom_vline(xintercept = c(ps_thresh, -ps_thresh)
+                              , linetype = 2
+                              , colour = "blue"
+                              ) +
+          labs(caption = paste0("Area between the blue dotted lines is practical equivalence (i.e. no practical change)"))
+
+      } else {
+
+        p <- p +
+          ggplot2::geom_vline(xintercept = 0
+                              , linetype = 2
+                              , colour = "blue"
+                              ) +
+          labs(caption = paste0("Blue dotted line indicates no change"))
+
+      }
+
+
+      results$year_diff_plot <- p
 
     }
 

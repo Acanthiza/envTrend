@@ -55,7 +55,9 @@ model as well as any random intercept?}
 \item{k}{For \code{mod_type = "gam"} only. Integer used as \code{k} argument of
 \code{mgcv::s()}.}
 
-\item{...}{Passed to \code{rstanarm::stan_gamm4} (e.g. chains, iter)}
+\item{...}{Depending on \code{mod_type} and \code{random_col}, passed to
+\code{rstanarm::stan_gamm4()}, \code{rstanarm::stan_glm()} or \code{rstanarm::stan_glmer()}
+(e.g. chains, iter)}
 }
 \value{
 \code{out_file}. \code{.rds} file containing named list of inputs and model

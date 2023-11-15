@@ -5,9 +5,10 @@
 #' Should now be generic enough to
 #'
 #' @param mod_file Character. Path to saved results from `make_ll_model`
-#' @param ref Numeric. Either a single value of `var_col` from `make_ll_model`
-#' to use as a reference value or a negative integer on the scale of `var_col`
-#' to compare all values of `var_col` against `var_col + ref`.
+#' @param ref Character or numeric. One of: a single level of `cat_col` from
+#' `make_ll_model` to set as the reference level; a single value of `var_col`
+#' from `make_ll_model` to use as a reference value or a negative integer on the
+#' scale of `var_col` to compare all values of `var_col` against `var_col + ref`.
 #' @param pred_step Numeric. What step (in units of `var_col`) to predict at?
 #' @param include_random Logical. If there is a random effect in the original
 #' model, should the levels of that random effect be conditioned on? If not,
@@ -243,7 +244,18 @@ make_mod_res <- function(mod_file
         {if(nrow(.) %% length(results$divergent) == 0) (.) %>% dplyr::mutate(divergent = results$divergent) else (.)} %>%
         dplyr::ungroup()
 
-      if(ref < 0) {
+      if(is.character(ref)) {
+
+        ref_draw <- pred %>%
+          dplyr::filter(!!rlang::ensym(cat_col) == ref) %>%
+          dplyr::rename(ref = pred) %>%
+          dplyr::select(tidyselect::any_of(c(cov_col, var_col, random_col)) # don't include cat_col here
+                        , .draw
+                        , ref
+                        )
+
+
+      } else if(ref < 0) {
 
         ref_draw <- pred %>%
           dplyr::mutate(!!rlang::ensym(var_col) := !!rlang::ensym(var_col) - ref) %>%

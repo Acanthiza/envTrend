@@ -11,8 +11,10 @@ explore_mod_ll(
   recent = as.numeric(format(Sys.Date(), "\%Y")) - 2,
   limit_preds = TRUE,
   plot_draws = 500,
-  diff_direction = c("pos", "neg"),
+  diff_direction = c("positive", "negative"),
   diff_category = NULL,
+  facet_col = cat_col,
+  dot_col = cov_col,
   do_gc = TRUE
 )
 }
@@ -26,10 +28,11 @@ on. If left as \code{NULL} will default to \code{cat_col} if there is more than 
 level, or new category \code{all} if there in not. Useful to condition on
 \code{random_col} if desired.}
 
-\item{do_gc}{}
-}
-\value{
+\item{dot_col}{Character name of column in original data to colour the
+original data points by in model results plots. Default is the secondary \code{x}
+variable \code{cov_col}.}
 
+\item{do_gc}{}
 }
 \description{
 General workflow is make the model (\code{make_ll_model}), make the model results

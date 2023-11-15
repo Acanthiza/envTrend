@@ -23,9 +23,10 @@ make_mod_res(
 \arguments{
 \item{mod_file}{Character. Path to saved results from \code{make_ll_model}}
 
-\item{ref}{Numeric. Either a single value of \code{var_col} from \code{make_ll_model}
-to use as a reference value or a negative integer on the scale of \code{var_col}
-to compare all values of \code{var_col} against \code{var_col + ref}.}
+\item{ref}{Character or numeric. One of: a single level of \code{cat_col} from
+\code{make_ll_model} to set as the reference level; a single value of \code{var_col}
+from \code{make_ll_model} to use as a reference value or a negative integer on the
+scale of \code{var_col} to compare all values of \code{var_col} against \code{var_col + ref}.}
 
 \item{pred_step}{Numeric. What step (in units of \code{var_col}) to predict at?}
 

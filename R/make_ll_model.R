@@ -27,7 +27,9 @@
 #' @param mod_type Character. Currently "glm" or "gam".
 #' @param k For `mod_type = "gam"` only. Integer used as `k` argument of
 #' `mgcv::s()`.
-#' @param ... Passed to `rstanarm::stan_gamm4` (e.g. chains, iter)
+#' @param ... Depending on `mod_type` and `random_col`, passed to
+#' `rstanarm::stan_gamm4()`, `rstanarm::stan_glm()` or `rstanarm::stan_glmer()`
+#' (e.g. chains, iter)
 #'
 #' @return `out_file`. `.rds` file containing named list of inputs and model
 #' results as `mod`.
